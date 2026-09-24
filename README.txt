@@ -1,5 +1,3 @@
-![Measure app screenshot](Measure.png)
-
 MEASURE — building a portable Windows .exe
 ============================================
 
