@@ -1,0 +1,30 @@
+{
+  "name": "Measure",
+  "version": "1.0.3",
+  "description": "Calculator, unit converter, and angle & radius toolkit",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "latest",
+    "electron-builder": "latest"
+  },
+  "build": {
+    "appId": "com.spencer.measure",
+    "productName": "Measure",
+    "files": [
+      "main.js",
+      "index.html"
+    ],
+    "win": {
+      "target": "portable",
+       "icon": "icon.ico"
+    },
+    "portable": {
+      "artifactName": "Measure.exe"
+    }
+  }
+}

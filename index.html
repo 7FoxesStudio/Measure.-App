@@ -1,0 +1,2282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Measure.</title>
+<meta name="theme-color" content="#C1592A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Measure">
+<link rel="manifest" id="manifestLink">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #ECE7DC;
+    --paper-dim: #E1DBCB;
+    --panel: #F4F1E8;
+    --ink: #22272A;
+    --ink-soft: #565F63;
+    --steel-line: rgba(34,39,42,0.16);
+    --blue: #C1592A;
+    --blue-ink: #7A3417;
+    --blue-soft: rgba(193,89,42,0.14);
+    --brass: #8A6D3F;
+    --brass-soft: rgba(138,109,63,0.18);
+    --danger: #A23B2E;
+    --radius-sm: 3px;
+    --radius-md: 5px;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #1B1E20;
+      --paper-dim: #202427;
+      --panel: #23282B;
+      --ink: #ECE7DC;
+      --ink-soft: #A6AEB3;
+      --steel-line: rgba(236,231,220,0.16);
+      --blue: #E07B4F;
+      --blue-ink: #FFD9C0;
+      --blue-soft: rgba(224,123,79,0.18);
+      --brass: #C9A46B;
+      --brass-soft: rgba(201,164,107,0.18);
+      --danger: #E08D7E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1B1E20;
+    --paper-dim: #202427;
+    --panel: #23282B;
+    --ink: #ECE7DC;
+    --ink-soft: #A6AEB3;
+    --steel-line: rgba(236,231,220,0.16);
+    --blue: #E07B4F;
+    --blue-ink: #FFD9C0;
+    --blue-soft: rgba(224,123,79,0.18);
+    --brass: #C9A46B;
+    --brass-soft: rgba(201,164,107,0.18);
+    --danger: #E08D7E;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    height: 100dvh;
+    height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .app {
+    height: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 16px 22px calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+  }
+  @media (max-width: 860px) {
+    body { height: auto; overflow: visible; }
+    .app { height: auto; padding: 20px 16px calc(30px + env(safe-area-inset-bottom, 0px)); }
+  }
+
+  /* ---- header ---- */
+  header.top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--steel-line);
+    margin-bottom: 12px;
+    flex: none;
+  }
+  .brand-mark {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .brand-mark .dial {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    position: relative;
+    flex: none;
+  }
+  .brand-mark .dial::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 11px;
+    background: var(--blue);
+    transform-origin: bottom center;
+    transform: translate(-50%, -100%) rotate(35deg);
+  }
+  .brand-mark .dial::before {
+    content: "";
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 3px; height: 3px;
+    background: var(--ink);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  h1 {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  header.top p {
+    margin: 3px 0 0;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    max-width: 34ch;
+  }
+  .theme-toggle {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: transparent;
+    border: 1px solid var(--steel-line);
+    color: var(--ink-soft);
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--ink-soft); color: var(--ink); }
+
+  /* ---- segmented io: dropdown of toggle switches controlling each node ---- */
+  .io-row {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex: none;
+    position: relative;
+  }
+  .io-dropdown {
+    position: relative;
+    flex: none;
+  }
+  .io-dropdown-trigger {
+    width: auto;
+    min-width: 190px;
+    height: 100%;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--panel);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-md);
+    padding: 0 14px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .io-dropdown-trigger:hover { border-color: var(--blue); }
+  .io-dropdown.open .io-dropdown-trigger { border-color: var(--blue); }
+  .io-dropdown-chevron {
+    flex: none;
+    font-size: 11px;
+    color: var(--ink-soft);
+    transition: transform 150ms ease;
+  }
+  .io-dropdown.open .io-dropdown-chevron { transform: rotate(180deg); }
+  .io-dropdown-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 230px;
+    max-width: min(320px, calc(100vw - 40px));
+    background: var(--panel);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+    z-index: 30;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .io-dropdown-panel[hidden] { display: none; }
+  .io-dropdown-panel .io-unit {
+    border-bottom: 1px solid var(--steel-line);
+  }
+  .io-dropdown-panel .io-unit:last-child { border-bottom: none; }
+  .grid-select-wrap {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    background: var(--panel);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-md);
+  }
+  .grid-select-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.03em;
+  }
+  #gridLayoutSelect {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--ink);
+    background: var(--panel);
+    border: none;
+    padding: 4px 2px;
+    cursor: pointer;
+  }
+  #gridLayoutSelect:focus { outline: none; }
+  #gridLayoutSelect option {
+    background: var(--panel);
+    color: var(--ink);
+  }
+  .io-unit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    padding: 9px 14px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .io-unit input {
+    position: absolute;
+    opacity: 0;
+    width: 1px; height: 1px;
+  }
+  .io-unit .track {
+    flex: none;
+    width: 34px;
+    height: 18px;
+    border-radius: 9px;
+    background: var(--steel-line);
+    border: 1px solid var(--ink-soft);
+    position: relative;
+    transition: background 140ms ease, border-color 140ms ease;
+  }
+  .io-unit .thumb {
+    position: absolute;
+    top: 1px; left: 1px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ink-soft);
+    transition: transform 140ms ease, background 140ms ease;
+  }
+  .io-unit input:checked + .track {
+    background: var(--blue);
+    border-color: var(--blue);
+  }
+  .io-unit input:checked + .track .thumb {
+    transform: translateX(16px);
+    background: #fff;
+  }
+  .io-unit input:focus-visible + .track {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+  }
+  .io-unit .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    opacity: 0.7;
+  }
+  .io-unit .label-text {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+  }
+  .io-unit.is-off .label-text { color: var(--ink-soft); }
+  .io-unit.is-off .num { opacity: 0.4; }
+
+  .node-grid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    gap: 14px;
+  }
+
+  section.panel {
+    background: var(--panel);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-md);
+    padding: clamp(10px, 3cqh, 18px) clamp(12px, 3.5cqw, 20px);
+    position: relative;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    container-type: size;
+    container-name: node;
+  }
+  section.panel[hidden] { display: none; }
+  section.panel.is-dragging { opacity: 0.4; }
+  section.panel.is-drop-target {
+    border-color: var(--blue);
+    box-shadow: inset 0 0 0 1px var(--blue);
+  }
+  /* datum-mark corners, like a drafting reference point on each node */
+  section.panel::before,
+  section.panel::after {
+    content: "";
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  section.panel::before {
+    top: -1px; left: -1px;
+    border-top: 2px solid var(--brass);
+    border-left: 2px solid var(--brass);
+  }
+  section.panel::after {
+    bottom: -1px; right: -1px;
+    border-bottom: 2px solid var(--brass);
+    border-right: 2px solid var(--brass);
+  }
+
+  .panel h2 {
+    font-family: var(--mono);
+    font-size: clamp(10.5px, 2.6cqh, 12.5px);
+    font-weight: 500;
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    margin: 0 0 clamp(6px, 2.6cqh, 14px);
+    padding-bottom: clamp(5px, 1.8cqh, 10px);
+    border-bottom: 1px dashed var(--steel-line);
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .drag-handle {
+    cursor: grab;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1;
+    padding: 2px 4px;
+    user-select: none;
+    letter-spacing: -1px;
+  }
+  .drag-handle:hover { color: var(--blue); }
+  .drag-handle:active { cursor: grabbing; }
+
+  .panel-body {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  /* safety fallback: if a node is squeezed smaller than content can shrink to, allow scroll rather than clipping */
+  .panel-body.needs-scroll {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .resize-grip {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+    z-index: 2;
+  }
+  .resize-grip::after {
+    content: "";
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--ink-soft);
+    border-bottom: 2px solid var(--ink-soft);
+    opacity: 0.5;
+  }
+  .resize-grip:hover::after { border-color: var(--blue); opacity: 0.9; }
+  section.panel.is-resizing {
+    box-shadow: inset 0 0 0 1px var(--blue);
+  }
+
+  .node-blank {
+    border: 1px dashed var(--steel-line);
+    border-radius: var(--radius-md);
+    opacity: 0.45;
+    transition: border-color 100ms ease, background 100ms ease, opacity 100ms ease;
+  }
+  .node-blank.is-drop-target {
+    border-color: var(--blue);
+    background: var(--blue-soft);
+    opacity: 1;
+  }
+
+  @media (max-width: 860px) {
+    .drag-handle, .resize-grip { display: none; }
+    .io-row { flex-direction: column; }
+    .grid-select-wrap { display: none; }
+    .node-grid {
+      display: flex !important;
+      flex-direction: column;
+      gap: 16px;
+    }
+    section.panel { min-height: 0; }
+    .panel-body { overflow: visible; }
+    .node-blank { display: none; }
+  }
+
+  /* ---- calculator ---- */
+  .readout {
+    background: var(--paper);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-sm);
+    padding: clamp(4px, 3cqh, 16px) clamp(8px, 3cqw, 16px);
+    margin-bottom: clamp(4px, 2cqh, 14px);
+    text-align: right;
+    flex: none;
+  }
+  .readout .prev {
+    font-family: var(--mono);
+    font-size: clamp(9px, 3cqw, 13px);
+    color: var(--ink-soft);
+    min-height: 1em;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .readout .curr {
+    font-family: var(--mono);
+    font-size: clamp(16px, 8cqw, 34px);
+    font-weight: 500;
+    margin-top: 2px;
+    overflow-x: auto;
+    white-space: nowrap;
+    line-height: 1.1;
+  }
+  .keys {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+    gap: clamp(3px, 1.4cqh, 8px);
+  }
+  .keys button {
+    font-family: var(--mono);
+    font-size: clamp(10px, 4.2cqw, 17px);
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--steel-line);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 100ms ease, transform 60ms ease;
+  }
+  .keys button:active { transform: scale(0.96); }
+  .keys button:hover { background: var(--paper-dim); }
+  .keys button.op { color: var(--blue-ink); border-color: var(--blue); background: var(--blue-soft); }
+  .keys button.op:hover { background: var(--blue-soft); filter: brightness(0.97); }
+  .keys button.eq { background: var(--blue); color: #fff; border-color: var(--blue); font-weight: 700; }
+  .keys button.eq:hover { filter: brightness(1.05); }
+  .keys button.clear { color: var(--danger); border-color: var(--danger); }
+  .keys button.wide { grid-column: span 2; }
+
+  /* ---- unit converter ---- */
+  .conv-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .field-label {
+    font-family: var(--mono);
+    font-size: clamp(9px, 2.4cqw, 11.5px);
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: clamp(3px, 1cqh, 6px);
+  }
+  select, input[type="text"], input[type="number"] {
+    font-family: var(--sans);
+    font-size: clamp(11px, 3.2cqw, 15px);
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-sm);
+    padding: clamp(6px, 3cqh, 10px) clamp(8px, 2.5cqw, 12px);
+    width: 100%;
+  }
+  select:focus, input:focus {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+  }
+  select option {
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .cat-row { margin-bottom: clamp(8px, 3cqh, 16px); }
+  .conv-pair {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: clamp(6px, 2cqw, 10px);
+    align-items: end;
+  }
+  .conv-field input { font-family: var(--mono); font-size: clamp(12px, 4.5cqw, 18px); }
+  .swap-btn {
+    align-self: center;
+    justify-self: center;
+    width: clamp(26px, 8cqw, 38px);
+    height: clamp(26px, 8cqw, 38px);
+    border-radius: 50%;
+    border: 1px solid var(--steel-line);
+    background: var(--paper);
+    color: var(--blue);
+    font-size: clamp(12px, 3.5cqw, 16px);
+    cursor: pointer;
+    margin-top: clamp(12px, 5cqh, 20px);
+  }
+  .swap-btn:hover { background: var(--blue-soft); }
+  .conv-note {
+    margin-top: clamp(6px, 2.5cqh, 14px);
+    font-family: var(--mono);
+    font-size: clamp(9px, 2.6cqw, 12px);
+    color: var(--ink-soft);
+  }
+
+  /* ---- angle / radius ---- */
+  .geo-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(10px, 4cqh, 22px);
+  }
+  @container node (min-width: 440px) {
+    .geo-grid.two-col { grid-template-columns: 1fr 1fr; }
+  }
+  .geo-block {
+    padding-bottom: clamp(8px, 3cqh, 18px);
+    border-bottom: 1px dashed var(--steel-line);
+  }
+  .geo-block:last-child { border-bottom: none; padding-bottom: 0; }
+  .geo-block h3 {
+    font-family: var(--sans);
+    font-size: clamp(11px, 3cqw, 14px);
+    font-weight: 600;
+    margin: 0 0 clamp(5px, 2cqh, 12px);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .geo-block h3 .diagram {
+    flex: none;
+  }
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(5px, 2cqw, 10px);
+  }
+  .field-grid .full { grid-column: 1 / -1; }
+  .unit-suffix { position: relative; }
+  .unit-suffix input { padding-right: 40px; }
+  .unit-suffix span {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--mono);
+    font-size: clamp(9px, 2.4cqw, 12px);
+    color: var(--ink-soft);
+    pointer-events: none;
+  }
+  .result-line {
+    font-family: var(--mono);
+    font-size: clamp(9px, 2.6cqw, 13px);
+    color: var(--ink-soft);
+    margin-top: clamp(5px, 2cqh, 10px);
+  }
+  .result-line b { color: var(--brass); font-weight: 700; }
+
+  .placeholder-note {
+    font-family: var(--mono);
+    font-size: clamp(8.5px, 2.2cqw, 12.5px);
+    color: var(--ink-soft);
+    text-align: center;
+    padding: clamp(6px, 2cqh, 10px) 0 2px;
+  }
+
+  /* ---- stopwatch / timer ---- */
+  .timer-mode-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: clamp(6px, 2cqh, 12px);
+    flex: none;
+  }
+  .timer-mode-btn {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: clamp(10px, 2.6cqw, 12px);
+    padding: clamp(5px, 2cqh, 8px) 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--steel-line);
+    background: var(--paper);
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .timer-mode-btn.active {
+    background: var(--blue-soft);
+    border-color: var(--blue);
+    color: var(--blue-ink);
+    font-weight: 600;
+  }
+  .timer-readout {
+    font-family: var(--mono);
+    font-size: clamp(24px, 11cqw, 52px);
+    font-weight: 600;
+    text-align: center;
+    background: var(--paper);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-sm);
+    padding: clamp(10px, 4cqh, 20px) 6px;
+    margin-bottom: clamp(6px, 2cqh, 14px);
+    letter-spacing: 0.02em;
+    flex: none;
+  }
+  .timer-readout.timer-alarm {
+    color: var(--blue);
+    animation: timerPulse 0.6s ease-in-out infinite;
+  }
+  @keyframes timerPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .timer-controls {
+    display: flex;
+    gap: clamp(4px, 1.6cqw, 8px);
+    margin-bottom: clamp(6px, 2cqh, 10px);
+    flex: none;
+  }
+  .timer-btn {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: clamp(11px, 3cqw, 14px);
+    padding: clamp(7px, 3cqh, 12px) 0;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--steel-line);
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .timer-btn.start { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 700; }
+  .timer-btn.danger { color: var(--danger); border-color: var(--danger); }
+  .timer-laps {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+  .timer-lap-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: clamp(9px, 2.4cqw, 12px);
+    color: var(--ink-soft);
+    padding: 2px 0;
+    border-bottom: 1px dashed var(--steel-line);
+    flex: none;
+  }
+
+  /* ---- material properties ---- */
+  .material-props {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4px, 1.5cqh, 7px);
+    margin-top: clamp(6px, 2cqh, 12px);
+  }
+  .mp-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: clamp(4px, 1.5cqh, 7px) clamp(8px, 2.5cqw, 10px);
+    background: var(--paper);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-sm);
+    flex: none;
+  }
+  .mp-label {
+    font-family: var(--sans);
+    font-size: clamp(9.5px, 2.4cqw, 12px);
+    color: var(--ink-soft);
+  }
+  .mp-value {
+    font-family: var(--mono);
+    font-size: clamp(10.5px, 2.8cqw, 13.5px);
+    color: var(--brass);
+    font-weight: 700;
+  }
+  select optgroup {
+    background: var(--paper);
+    color: var(--ink-soft);
+    font-style: normal;
+  }
+
+  /* ---- notepad ---- */
+  .notes-textarea {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    resize: none;
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-sm);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: clamp(12px, 3cqw, 15px);
+    line-height: 1.5;
+    padding: clamp(8px, 3cqh, 12px) clamp(10px, 3cqw, 14px);
+  }
+  .notes-textarea:focus {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+  }
+  .notes-textarea::placeholder {
+    color: var(--ink-soft);
+    opacity: 0.7;
+  }
+  .notes-footer {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: clamp(6px, 2cqh, 10px);
+  }
+  .notes-status {
+    font-family: var(--mono);
+    font-size: clamp(9px, 2.2cqw, 11px);
+    color: var(--ink-soft);
+    opacity: 0.75;
+  }
+  .notes-clear-btn {
+    font-family: var(--mono);
+    font-size: clamp(10px, 2.6cqw, 12px);
+    padding: clamp(4px, 1.5cqh, 7px) clamp(10px, 2.5cqw, 14px);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--danger);
+    background: transparent;
+    color: var(--danger);
+    cursor: pointer;
+  }
+  .notes-clear-btn:hover { background: rgba(162, 59, 46, 0.1); }
+
+  footer.foot {
+    margin-top: 10px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    opacity: 0.75;
+    flex: none;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <div class="brand-mark">
+      <span class="dial" aria-hidden="true"></span>
+      <div>
+        <h1>Measure.</h1>
+      </div>
+    </div>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle color theme">◐ theme</button>
+  </header>
+
+  <div class="io-row">
+    <div class="io-dropdown" id="ioDropdown">
+      <button type="button" class="io-dropdown-trigger" id="ioDropdownTrigger" aria-haspopup="true" aria-expanded="false">
+        <span class="io-dropdown-label" id="ioDropdownLabel">Tools</span>
+        <span class="io-dropdown-chevron">&#9662;</span>
+      </button>
+      <div class="io-dropdown-panel" id="ioDropdownPanel" role="group" aria-label="Toggle which tools are shown on the page" hidden>
+        <label class="io-unit" id="io-calc">
+          <input type="checkbox" data-target="panel-calc" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="num">01</span>
+          <span class="label-text">Calculator</span>
+        </label>
+        <label class="io-unit" id="io-convert">
+          <input type="checkbox" data-target="panel-convert" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="num">02</span>
+          <span class="label-text">Convert</span>
+        </label>
+        <label class="io-unit" id="io-geo">
+          <input type="checkbox" data-target="panel-geo" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="num">03</span>
+          <span class="label-text">Angle &amp; Radius</span>
+        </label>
+        <label class="io-unit" id="io-thermal">
+          <input type="checkbox" data-target="panel-thermal" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="num">04</span>
+          <span class="label-text">Thermal Exp.</span>
+        </label>
+        <label class="io-unit" id="io-timer">
+          <input type="checkbox" data-target="panel-timer" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="num">05</span>
+          <span class="label-text">Stopwatch</span>
+        </label>
+        <label class="io-unit" id="io-material">
+          <input type="checkbox" data-target="panel-material" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="num">06</span>
+          <span class="label-text">Materials</span>
+        </label>
+        <label class="io-unit" id="io-notes">
+          <input type="checkbox" data-target="panel-notes" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="num">07</span>
+          <span class="label-text">Notepad</span>
+        </label>
+      </div>
+    </div>
+    <label class="grid-select-wrap">
+      <span class="grid-select-label">grid</span>
+      <select id="gridLayoutSelect">
+        <option value="auto">Auto</option>
+        <option value="2x2">2 &times; 2</option>
+        <option value="2x3">2 &times; 3</option>
+        <option value="3x2">3 &times; 2</option>
+        <option value="3x3">3 &times; 3</option>
+        <option value="4x4">4 &times; 4</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="node-grid" id="nodeGrid">
+
+  <!-- ===================== CALCULATOR ===================== -->
+  <section class="panel" id="panel-calc">
+    <h2><span class="h2-text">basic calculator</span><span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span></h2>
+    <div class="panel-body">
+    <div class="readout">
+      <div class="prev" id="calcPrev">&nbsp;</div>
+      <div class="curr" id="calcCurr">0</div>
+    </div>
+    <div class="keys">
+      <button class="clear" data-k="ac">AC</button>
+      <button data-k="paren">( )</button>
+      <button data-k="percent">%</button>
+      <button class="op" data-k="/">÷</button>
+
+      <button data-k="7">7</button>
+      <button data-k="8">8</button>
+      <button data-k="9">9</button>
+      <button class="op" data-k="*">×</button>
+
+      <button data-k="4">4</button>
+      <button data-k="5">5</button>
+      <button data-k="6">6</button>
+      <button class="op" data-k="-">−</button>
+
+      <button data-k="1">1</button>
+      <button data-k="2">2</button>
+      <button data-k="3">3</button>
+      <button class="op" data-k="+">+</button>
+
+      <button data-k="0" class="wide">0</button>
+      <button data-k=".">.</button>
+      <button class="op" data-k="back">⌫</button>
+      <button class="eq" data-k="=" style="grid-column: span 4;">=</button>
+    </div>
+    </div>
+    <div class="resize-grip" title="Drag to resize"></div>
+  </section>
+
+  <!-- ===================== UNIT CONVERTER ===================== -->
+  <section class="panel" id="panel-convert">
+    <h2><span class="h2-text">unit converter</span><span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span></h2>
+    <div class="panel-body">
+
+    <div class="cat-row">
+      <label class="field-label" for="convCategory">measurement type</label>
+      <select id="convCategory"></select>
+    </div>
+
+    <div class="conv-pair">
+      <div class="conv-field">
+        <label class="field-label" for="convFromUnit">from</label>
+        <select id="convFromUnit" style="margin-bottom:8px;"></select>
+        <input type="text" inputmode="decimal" id="convFromValue" value="1">
+      </div>
+      <button class="swap-btn" id="convSwap" type="button" aria-label="Swap units" title="Swap">⇄</button>
+      <div class="conv-field">
+        <label class="field-label" for="convToUnit">to</label>
+        <select id="convToUnit" style="margin-bottom:8px;"></select>
+        <input type="text" inputmode="decimal" id="convToValue" value="">
+      </div>
+    </div>
+    <div class="conv-note" id="convNote"></div>
+    </div>
+    <div class="resize-grip" title="Drag to resize"></div>
+  </section>
+
+  <!-- ===================== ANGLE & RADIUS ===================== -->
+  <section class="panel" id="panel-geo">
+    <h2><span class="h2-text">angle &amp; radius tools</span><span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span></h2>
+    <div class="panel-body">
+
+    <div class="geo-grid two-col">
+      <div class="geo-block">
+        <h3>
+          <svg class="diagram" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="10" cy="10" r="8" fill="none" stroke="var(--blue)" stroke-width="1.6"/>
+            <line x1="10" y1="10" x2="17" y2="10" stroke="var(--brass)" stroke-width="1.6"/>
+          </svg>
+          Circle
+        </h3>
+        <div class="field-grid">
+          <div class="unit-suffix">
+            <label class="field-label" for="circRadius">radius</label>
+            <input type="text" inputmode="decimal" id="circRadius" value="1">
+          </div>
+          <div class="unit-suffix">
+            <label class="field-label" for="circDiameter">diameter</label>
+            <input type="text" inputmode="decimal" id="circDiameter" value="2">
+          </div>
+        </div>
+        <div class="result-line" id="circResult"></div>
+      </div>
+
+      <div class="geo-block">
+        <h3>
+          <svg class="diagram" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M10 17 L10 3 A14 14 0 0 1 18.5 9" fill="none" stroke="var(--blue)" stroke-width="1.6"/>
+          </svg>
+          Angle units
+        </h3>
+        <div class="field-grid">
+          <div class="unit-suffix">
+            <label class="field-label" for="angDeg">degrees</label>
+            <input type="text" inputmode="decimal" id="angDeg" value="45">
+          </div>
+          <div class="unit-suffix">
+            <label class="field-label" for="angRad">radians</label>
+            <input type="text" inputmode="decimal" id="angRad" value="">
+          </div>
+          <div class="unit-suffix full">
+            <label class="field-label" for="angGrad">gradians</label>
+            <input type="text" inputmode="decimal" id="angGrad" value="">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="geo-grid" style="margin-top: 4px;">
+      <div class="geo-block">
+        <h3>
+          <svg class="diagram" width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M10 10 L10 2 A8 8 0 0 1 16.6 14.1 Z" fill="var(--brass-soft)" stroke="var(--blue)" stroke-width="1.4"/>
+          </svg>
+          Arc &amp; chord from radius + angle
+        </h3>
+        <div class="field-grid">
+          <div class="unit-suffix">
+            <label class="field-label" for="arcRadius">radius</label>
+            <input type="text" inputmode="decimal" id="arcRadius" value="10">
+          </div>
+          <div class="unit-suffix">
+            <label class="field-label" for="arcAngle">angle</label>
+            <input type="text" inputmode="decimal" id="arcAngle" value="90">
+            <span>deg</span>
+          </div>
+        </div>
+        <div class="result-line" id="arcResult"></div>
+      </div>
+    </div>
+
+    <div class="placeholder-note">+ more measurement tools (bolt circles, triangles, gears…) will slot in here later</div>
+    </div>
+    <div class="resize-grip" title="Drag to resize"></div>
+  </section>
+
+  <!-- ===================== THERMAL EXPANSION ===================== -->
+  <section class="panel" id="panel-thermal">
+    <h2><span class="h2-text">thermal expansion</span><span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span></h2>
+    <div class="panel-body">
+
+    <div class="cat-row">
+      <label class="field-label" for="teMaterial">material</label>
+      <select id="teMaterial"></select>
+    </div>
+
+    <div class="field-grid">
+      <div class="unit-suffix">
+        <label class="field-label" for="teLength">original length</label>
+        <input type="text" inputmode="decimal" id="teLength" value="100">
+        <span>mm</span>
+      </div>
+      <div class="unit-suffix">
+        <label class="field-label" for="teStartTemp">start temp</label>
+        <input type="text" inputmode="decimal" id="teStartTemp" value="20">
+        <span>&deg;C</span>
+      </div>
+      <div class="unit-suffix">
+        <label class="field-label" for="teTargetTemp">target temp</label>
+        <input type="text" inputmode="decimal" id="teTargetTemp" value="100">
+        <span>&deg;C</span>
+      </div>
+      <div class="unit-suffix">
+        <label class="field-label" for="teDeltaL">&Delta; length</label>
+        <input type="text" inputmode="decimal" id="teDeltaL" value="">
+        <span>mm</span>
+      </div>
+    </div>
+    <div class="result-line" id="teResult"></div>
+    <div class="placeholder-note">edit target temp OR &Delta; length — the other one solves for it</div>
+
+    </div>
+    <div class="resize-grip" title="Drag to resize"></div>
+  </section>
+
+  <!-- ===================== STOPWATCH / TIMER ===================== -->
+  <section class="panel" id="panel-timer">
+    <h2><span class="h2-text">stopwatch / timer</span><span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span></h2>
+    <div class="panel-body">
+
+    <div class="timer-mode-toggle">
+      <button type="button" class="timer-mode-btn active" data-mode="stopwatch">Stopwatch</button>
+      <button type="button" class="timer-mode-btn" data-mode="timer">Timer</button>
+    </div>
+
+    <div class="timer-readout" id="timerReadout">00:00.00</div>
+
+    <div class="field-grid" id="timerDurationRow" hidden>
+      <div class="unit-suffix">
+        <label class="field-label" for="timerMin">minutes</label>
+        <input type="text" inputmode="numeric" id="timerMin" value="5">
+      </div>
+      <div class="unit-suffix">
+        <label class="field-label" for="timerSec">seconds</label>
+        <input type="text" inputmode="numeric" id="timerSec" value="0">
+      </div>
+    </div>
+
+    <div class="timer-controls">
+      <button type="button" class="timer-btn start" id="timerStartBtn">Start</button>
+      <button type="button" class="timer-btn" id="timerLapBtn">Lap</button>
+      <button type="button" class="timer-btn danger" id="timerResetBtn">Reset</button>
+    </div>
+
+    <div class="timer-laps" id="timerLaps"></div>
+
+    </div>
+    <div class="resize-grip" title="Drag to resize"></div>
+  </section>
+
+  <!-- ===================== MATERIAL PROPERTIES ===================== -->
+  <section class="panel" id="panel-material">
+    <h2><span class="h2-text">material properties</span><span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span></h2>
+    <div class="panel-body">
+
+    <div class="cat-row">
+      <label class="field-label" for="mpMaterial">material</label>
+      <select id="mpMaterial"></select>
+    </div>
+
+    <div class="material-props">
+      <div class="mp-row"><span class="mp-label">Tensile Strength</span><span class="mp-value" id="mpTensile">—</span></div>
+      <div class="mp-row"><span class="mp-label">Yield Strength</span><span class="mp-value" id="mpYield">—</span></div>
+      <div class="mp-row"><span class="mp-label">Density</span><span class="mp-value" id="mpDensity">—</span></div>
+      <div class="mp-row"><span class="mp-label">Melt / Process Temp</span><span class="mp-value" id="mpMelt">—</span></div>
+      <div class="mp-row"><span class="mp-label">Elastic Modulus</span><span class="mp-value" id="mpModulus">—</span></div>
+    </div>
+    <div class="placeholder-note">typical reference values — actual properties vary by alloy, temper, or brand</div>
+
+    </div>
+    <div class="resize-grip" title="Drag to resize"></div>
+  </section>
+
+  <!-- ===================== NOTEPAD ===================== -->
+  <section class="panel" id="panel-notes">
+    <h2><span class="h2-text">notepad</span><span class="drag-handle" draggable="true" title="Drag to reorder">⠿</span></h2>
+    <div class="panel-body">
+
+    <textarea id="notesArea" class="notes-textarea" placeholder="Jot something down — it saves automatically…" spellcheck="false"></textarea>
+    <div class="notes-footer">
+      <span class="notes-status" id="notesSavedStatus">saved</span>
+      <button type="button" class="notes-clear-btn" id="notesClearBtn">Clear</button>
+    </div>
+
+    </div>
+    <div class="resize-grip" title="Drag to resize"></div>
+  </section>
+
+  </div><!-- /.node-grid -->
+
+  <footer class="foot">built for quick reference — no data leaves this page</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------------- PWA MANIFEST (built at runtime, not embedded as a static data URI —
+     avoids some antivirus heuristics that flag base64 data: URIs sitting in raw HTML) ---------------- */
+  (function setupManifest() {
+    try {
+      var iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">' +
+        '<rect width="192" height="192" rx="28" fill="#ECE7DC"/>' +
+        '<circle cx="96" cy="96" r="54" fill="none" stroke="#22272A" stroke-width="10"/>' +
+        '<line x1="96" y1="96" x2="138" y2="62" stroke="#C1592A" stroke-width="9" stroke-linecap="round"/>' +
+        '<circle cx="96" cy="96" r="7" fill="#22272A"/>' +
+        '</svg>';
+      var iconUri = 'data:image/svg+xml,' + encodeURIComponent(iconSvg);
+      var manifest = {
+        name: "Measure.",
+        short_name: "Measure",
+        description: "Calculator, unit converter, angle & radius, thermal expansion, stopwatch, material properties, and notepad tools in one place.",
+        start_url: ".",
+        display: "standalone",
+        background_color: "#ECE7DC",
+        theme_color: "#C1592A",
+        icons: [
+          { src: iconUri, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+          { src: iconUri, sizes: "512x512", type: "image/svg+xml", purpose: "any" }
+        ]
+      };
+      var blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+      var link = document.getElementById('manifestLink');
+      if (link) link.href = URL.createObjectURL(blob);
+    } catch (e) { /* manifest unavailable — app itself still works fine without it */ }
+  })();
+
+  /* ---------------- THEME ---------------- */
+  var themeBtn = document.getElementById('themeToggle');
+  var root = document.documentElement;
+  themeBtn.addEventListener('click', function () {
+    var cur = root.getAttribute('data-theme');
+    if (cur === 'dark') { root.setAttribute('data-theme', 'light'); }
+    else if (cur === 'light') { root.removeAttribute('data-theme'); }
+    else { root.setAttribute('data-theme', 'dark'); }
+  });
+
+  /* ---------------- NODE GRID (auto-packing, draggable, resizable) ---------------- */
+  var nodeGrid = document.getElementById('nodeGrid');
+  var ALL_IDS = ['panel-calc', 'panel-convert', 'panel-geo', 'panel-thermal', 'panel-timer', 'panel-material', 'panel-notes'];
+  var MAX_SPAN = 2;
+
+  var nodeOrder = ALL_IDS.slice();
+  var nodeMeta = {};
+  ALL_IDS.forEach(function (id) { nodeMeta[id] = { colSpan: 1, rowSpan: 1, row: null, col: null }; });
+
+  var LAYOUT_KEY = 'measure-toolkit-layout';
+  var GRID_PRESETS = {
+    auto: 'auto',
+    '2x2': { cols: 2, rows: 2 },
+    '2x3': { cols: 2, rows: 3 },
+    '3x2': { cols: 3, rows: 2 },
+    '3x3': { cols: 3, rows: 3 },
+    '4x4': { cols: 4, rows: 4 }
+  };
+  var gridModeKey = 'auto';
+
+  function loadLayout() {
+    try {
+      var raw = window.localStorage.getItem(LAYOUT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function saveLayout() {
+    try {
+      window.localStorage.setItem(LAYOUT_KEY, JSON.stringify({ order: nodeOrder, spans: nodeMeta, gridMode: gridModeKey }));
+    } catch (e) { /* ignore */ }
+  }
+  (function restoreLayout() {
+    var saved = loadLayout();
+    if (!saved) return;
+    if (Array.isArray(saved.order)) {
+      var valid = saved.order.filter(function (id) { return ALL_IDS.indexOf(id) !== -1; });
+      ALL_IDS.forEach(function (id) { if (valid.indexOf(id) === -1) valid.push(id); });
+      nodeOrder = valid;
+    }
+    if (saved.spans) {
+      ALL_IDS.forEach(function (id) {
+        if (saved.spans[id]) {
+          nodeMeta[id] = {
+            colSpan: Math.min(MAX_SPAN, Math.max(1, saved.spans[id].colSpan || 1)),
+            rowSpan: Math.min(MAX_SPAN, Math.max(1, saved.spans[id].rowSpan || 1)),
+            row: (typeof saved.spans[id].row === 'number') ? saved.spans[id].row : null,
+            col: (typeof saved.spans[id].col === 'number') ? saved.spans[id].col : null
+          };
+        }
+      });
+    }
+    if (typeof saved.gridMode === 'string' && Object.prototype.hasOwnProperty.call(GRID_PRESETS, saved.gridMode)) {
+      gridModeKey = saved.gridMode;
+    }
+  })();
+
+  var gridLayoutSelect = document.getElementById('gridLayoutSelect');
+  gridLayoutSelect.value = gridModeKey;
+  gridLayoutSelect.addEventListener('change', function () {
+    gridModeKey = gridLayoutSelect.value;
+    // clear old pinned positions (keep sizes) so nodes re-flow cleanly into the new shape
+    ALL_IDS.forEach(function (id) { nodeMeta[id].row = null; nodeMeta[id].col = null; });
+    saveLayout();
+    layoutGrid();
+  });
+
+  function packLayout(visibleIds) {
+    var preset = GRID_PRESETS[gridModeKey];
+    var cols, minRows;
+    if (preset === 'auto' || !preset) {
+      var totalCells = 0;
+      visibleIds.forEach(function (id) {
+        totalCells += nodeMeta[id].colSpan * nodeMeta[id].rowSpan;
+      });
+      cols = Math.max(1, Math.ceil(Math.sqrt(totalCells)));
+      minRows = 0;
+    } else {
+      cols = preset.cols;
+      minRows = preset.rows;
+    }
+    visibleIds.forEach(function (id) { cols = Math.max(cols, nodeMeta[id].colSpan); });
+    var occupied = [];
+    function isFree(r, c, cs, rs) {
+      if (c + cs > cols || c < 0 || r < 0) return false;
+      for (var rr = r; rr < r + rs; rr++) {
+        if (occupied[rr]) {
+          for (var cc = c; cc < c + cs; cc++) {
+            if (occupied[rr][cc]) return false;
+          }
+        }
+      }
+      return true;
+    }
+    function occupy(r, c, cs, rs) {
+      for (var rr = r; rr < r + rs; rr++) {
+        if (!occupied[rr]) occupied[rr] = [];
+        for (var cc = c; cc < c + cs; cc++) occupied[rr][cc] = true;
+      }
+    }
+    var placements = {};
+    var maxRow = 0;
+
+    // place pinned nodes first, in current order (so an earlier pin wins a conflict)
+    var stillNeedsPlacing = [];
+    nodeOrder.filter(function (id) { return visibleIds.indexOf(id) !== -1; }).forEach(function (id) {
+      var meta = nodeMeta[id];
+      var cs = meta.colSpan, rs = meta.rowSpan;
+      if (meta.row != null && meta.col != null && isFree(meta.row, meta.col, cs, rs)) {
+        occupy(meta.row, meta.col, cs, rs);
+        placements[id] = { row: meta.row, col: meta.col, cs: cs, rs: rs };
+        maxRow = Math.max(maxRow, meta.row + rs);
+      } else {
+        stillNeedsPlacing.push(id);
+      }
+    });
+
+    // auto-flow the rest, first-fit, in order
+    stillNeedsPlacing.forEach(function (id) {
+      var cs = nodeMeta[id].colSpan, rs = nodeMeta[id].rowSpan;
+      var r = 0, placed = false;
+      while (!placed) {
+        for (var c = 0; c <= cols - cs; c++) {
+          if (isFree(r, c, cs, rs)) {
+            occupy(r, c, cs, rs);
+            placements[id] = { row: r, col: c, cs: cs, rs: rs };
+            maxRow = Math.max(maxRow, r + rs);
+            placed = true;
+            break;
+          }
+        }
+        r++;
+        if (r > 40) { placements[id] = { row: 0, col: 0, cs: 1, rs: 1 }; placed = true; }
+      }
+    });
+
+    return { cols: cols, rows: Math.max(1, minRows, maxRow), placements: placements, occupied: occupied };
+  }
+
+  function updateScrollFallback() {
+    var bodies = nodeGrid.querySelectorAll('.panel-body');
+    bodies.forEach(function (pb) { pb.classList.remove('needs-scroll'); });
+    requestAnimationFrame(function () {
+      bodies.forEach(function (pb) {
+        if (pb.scrollHeight > pb.clientHeight + 1) {
+          pb.classList.add('needs-scroll');
+        }
+      });
+    });
+  }
+
+  function layoutGrid() {
+    Array.prototype.forEach.call(nodeGrid.querySelectorAll('.node-blank'), function (b) { b.remove(); });
+
+    var visibleIds = nodeOrder.filter(function (id) {
+      var p = document.getElementById(id);
+      return p && !p.hidden;
+    });
+
+    if (visibleIds.length === 0) {
+      nodeGrid.style.gridTemplateColumns = '';
+      nodeGrid.style.gridTemplateRows = '';
+      return;
+    }
+
+    var result = packLayout(visibleIds);
+    nodeGrid.style.gridTemplateColumns = 'repeat(' + result.cols + ', 1fr)';
+    nodeGrid.style.gridTemplateRows = 'repeat(' + result.rows + ', 1fr)';
+
+    visibleIds.forEach(function (id) {
+      var p = document.getElementById(id);
+      var pl = result.placements[id];
+      p.style.gridColumn = (pl.col + 1) + ' / span ' + pl.cs;
+      p.style.gridRow = (pl.row + 1) + ' / span ' + pl.rs;
+    });
+
+    for (var r = 0; r < result.rows; r++) {
+      for (var c = 0; c < result.cols; c++) {
+        if (!(result.occupied[r] && result.occupied[r][c])) {
+          var blank = document.createElement('div');
+          blank.className = 'node-blank';
+          blank.setAttribute('aria-hidden', 'true');
+          blank.dataset.row = r;
+          blank.dataset.col = c;
+          blank.style.gridColumn = (c + 1) + ' / span 1';
+          blank.style.gridRow = (r + 1) + ' / span 1';
+          nodeGrid.appendChild(blank);
+        }
+      }
+    }
+    updateScrollFallback();
+  }
+
+  /* ---- drag to reorder (via the ⠿ handle in each node's header) ---- */
+  var draggedId = null;
+
+  nodeGrid.querySelectorAll('.drag-handle').forEach(function (handle) {
+    handle.addEventListener('dragstart', function (e) {
+      var panel = handle.closest('section.panel');
+      draggedId = panel.id;
+      panel.classList.add('is-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', panel.id); } catch (err) {}
+    });
+    handle.addEventListener('dragend', function () {
+      var panel = handle.closest('section.panel');
+      panel.classList.remove('is-dragging');
+      draggedId = null;
+      nodeGrid.querySelectorAll('.is-drop-target').forEach(function (n) { n.classList.remove('is-drop-target'); });
+    });
+  });
+
+  // dropping onto another node: swap/reorder, and return the dragged node to auto-flow
+  ALL_IDS.forEach(function (id) {
+    var panel = document.getElementById(id);
+    panel.addEventListener('dragover', function (e) {
+      if (!draggedId || draggedId === id) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      panel.classList.add('is-drop-target');
+    });
+    panel.addEventListener('dragleave', function () {
+      panel.classList.remove('is-drop-target');
+    });
+    panel.addEventListener('drop', function (e) {
+      e.preventDefault();
+      panel.classList.remove('is-drop-target');
+      if (!draggedId || draggedId === id) return;
+      var fromIdx = nodeOrder.indexOf(draggedId);
+      var toIdx = nodeOrder.indexOf(id);
+      if (fromIdx === -1 || toIdx === -1) return;
+      nodeMeta[draggedId].row = null;
+      nodeMeta[draggedId].col = null;
+      nodeOrder.splice(fromIdx, 1);
+      nodeOrder.splice(toIdx, 0, draggedId);
+      saveLayout();
+      layoutGrid();
+    });
+  });
+
+  // dropping onto an empty outlined slot: pin the node to that exact cell
+  nodeGrid.addEventListener('dragover', function (e) {
+    var blank = e.target.closest ? e.target.closest('.node-blank') : null;
+    if (blank && draggedId) {
+      e.preventDefault();
+      blank.classList.add('is-drop-target');
+    }
+  });
+  nodeGrid.addEventListener('dragleave', function (e) {
+    var blank = e.target.closest ? e.target.closest('.node-blank') : null;
+    if (blank) blank.classList.remove('is-drop-target');
+  });
+  nodeGrid.addEventListener('drop', function (e) {
+    var blank = e.target.closest ? e.target.closest('.node-blank') : null;
+    if (blank && draggedId) {
+      e.preventDefault();
+      blank.classList.remove('is-drop-target');
+      nodeMeta[draggedId].row = parseInt(blank.dataset.row, 10);
+      nodeMeta[draggedId].col = parseInt(blank.dataset.col, 10);
+      saveLayout();
+      layoutGrid();
+    }
+  });
+
+  /* ---- drag a node's corner to resize (1x1 up to 2x2) ---- */
+  ALL_IDS.forEach(function (id) {
+    var panel = document.getElementById(id);
+    var grip = panel.querySelector('.resize-grip');
+    if (!grip) return;
+    var startX, startY, startCol, startRow, cellW, cellH;
+
+    grip.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      startX = e.clientX;
+      startY = e.clientY;
+      startCol = nodeMeta[id].colSpan;
+      startRow = nodeMeta[id].rowSpan;
+      var gridRect = nodeGrid.getBoundingClientRect();
+      var styles = getComputedStyle(nodeGrid);
+      var colCount = styles.gridTemplateColumns.split(' ').length || 1;
+      var rowCount = styles.gridTemplateRows.split(' ').length || 1;
+      cellW = gridRect.width / colCount;
+      cellH = gridRect.height / rowCount;
+      panel.classList.add('is-resizing');
+      grip.setPointerCapture(e.pointerId);
+
+      function onMove(ev) {
+        var dx = ev.clientX - startX;
+        var dy = ev.clientY - startY;
+        var newCol = Math.round(startCol + dx / cellW);
+        var newRow = Math.round(startRow + dy / cellH);
+        newCol = Math.max(1, Math.min(MAX_SPAN, newCol));
+        newRow = Math.max(1, Math.min(MAX_SPAN, newRow));
+        if (newCol !== nodeMeta[id].colSpan || newRow !== nodeMeta[id].rowSpan) {
+          nodeMeta[id].colSpan = newCol;
+          nodeMeta[id].rowSpan = newRow;
+          layoutGrid();
+        }
+      }
+      function onUp(ev) {
+        panel.classList.remove('is-resizing');
+        grip.releasePointerCapture(ev.pointerId);
+        grip.removeEventListener('pointermove', onMove);
+        grip.removeEventListener('pointerup', onUp);
+        saveLayout();
+      }
+      grip.addEventListener('pointermove', onMove);
+      grip.addEventListener('pointerup', onUp);
+    });
+  });
+
+  /* ---------------- SEGMENTED IO (toggle switches) ---------------- */
+  var STORAGE_KEY = 'measure-toolkit-segments';
+
+  function loadSegmentState() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function saveSegmentState(state) {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch (e) { /* storage unavailable, ignore */ }
+  }
+
+  var savedState = loadSegmentState();
+  var ioInputs = document.querySelectorAll('.io-unit input[type="checkbox"]');
+
+  function applyToggle(input) {
+    var panel = document.getElementById(input.getAttribute('data-target'));
+    var unit = input.closest('.io-unit');
+    if (!panel) return;
+    panel.hidden = !input.checked;
+    unit.classList.toggle('is-off', !input.checked);
+  }
+
+  ioInputs.forEach(function (input) {
+    var key = input.getAttribute('data-target');
+    if (Object.prototype.hasOwnProperty.call(savedState, key)) {
+      input.checked = !!savedState[key];
+    }
+    applyToggle(input);
+    input.addEventListener('change', function () {
+      applyToggle(input);
+      var state = loadSegmentState();
+      state[key] = input.checked;
+      saveSegmentState(state);
+      layoutGrid();
+      ioDropdownUpdateLabel();
+    });
+  });
+
+  /* ---- dropdown open/close + live count label ---- */
+  var ioDropdown = document.getElementById('ioDropdown');
+  var ioDropdownTrigger = document.getElementById('ioDropdownTrigger');
+  var ioDropdownPanel = document.getElementById('ioDropdownPanel');
+  var ioDropdownLabel = document.getElementById('ioDropdownLabel');
+
+  function ioDropdownUpdateLabel() {
+  ioDropdownLabel.textContent = 'Tools';
+}
+
+  function ioDropdownClose() {
+    ioDropdownPanel.hidden = true;
+    ioDropdown.classList.remove('open');
+    ioDropdownTrigger.setAttribute('aria-expanded', 'false');
+  }
+  function ioDropdownOpen() {
+    ioDropdownPanel.hidden = false;
+    ioDropdown.classList.add('open');
+    ioDropdownTrigger.setAttribute('aria-expanded', 'true');
+  }
+
+  ioDropdownTrigger.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (ioDropdownPanel.hidden) { ioDropdownOpen(); } else { ioDropdownClose(); }
+  });
+  document.addEventListener('click', function (e) {
+    if (!ioDropdown.contains(e.target)) ioDropdownClose();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !ioDropdownPanel.hidden) ioDropdownClose();
+  });
+
+  ioDropdownUpdateLabel();
+
+  layoutGrid();
+
+  var resizeRaf = null;
+  window.addEventListener('resize', function () {
+    if (resizeRaf) cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(updateScrollFallback);
+  });
+
+  /* ---------------- CALCULATOR ---------------- */
+  var prevEl = document.getElementById('calcPrev');
+  var currEl = document.getElementById('calcCurr');
+  var expr = "";
+  var justEvaluated = false;
+
+  function safeEval(str) {
+    // only allow digits, operators, parentheses, decimal point, percent, whitespace
+    if (!/^[0-9+\-*/().%\s]*$/.test(str)) throw new Error("bad input");
+    // convert trailing/standalone % to *0.01 applied to the preceding number
+    var cleaned = str.replace(/(\d+(\.\d+)?)%/g, "($1*0.01)");
+    if (cleaned.trim() === "") return 0;
+    // balance unclosed parens
+    var open = (cleaned.match(/\(/g) || []).length;
+    var close = (cleaned.match(/\)/g) || []).length;
+    while (close < open) { cleaned += ")"; close++; }
+    // eslint-disable-next-line no-new-func
+    var val = Function('"use strict"; return (' + cleaned + ")")();
+    if (typeof val !== "number" || !isFinite(val)) throw new Error("bad result");
+    return val;
+  }
+
+  function renderCalc() {
+    currEl.textContent = expr === "" ? "0" : expr;
+  }
+
+  function formatNum(n) {
+    if (Math.abs(n) >= 1e12 || (Math.abs(n) < 1e-9 && n !== 0)) return n.toExponential(6);
+    var s = Math.round(n * 1e10) / 1e10;
+    return String(s);
+  }
+
+  document.querySelector('#panel-calc .keys').addEventListener('click', function (e) {
+    var btn = e.target.closest('button');
+    if (!btn) return;
+    var k = btn.getAttribute('data-k');
+
+    if (k === 'ac') {
+      expr = ""; prevEl.textContent = "\u00A0"; justEvaluated = false; renderCalc(); return;
+    }
+    if (k === 'back') {
+      expr = expr.slice(0, -1); justEvaluated = false; renderCalc(); return;
+    }
+    if (k === 'paren') {
+      var openCount = (expr.match(/\(/g) || []).length;
+      var closeCount = (expr.match(/\)/g) || []).length;
+      var lastCh = expr.slice(-1);
+      if (openCount > closeCount && /[0-9)]/.test(lastCh)) { expr += ")"; }
+      else { expr += "("; }
+      justEvaluated = false; renderCalc(); return;
+    }
+    if (k === 'percent') {
+      expr += "%"; justEvaluated = false; renderCalc(); return;
+    }
+    if (k === '=') {
+      try {
+        var result = safeEval(expr);
+        prevEl.textContent = expr + " =";
+        expr = formatNum(result);
+        justEvaluated = true;
+      } catch (err) {
+        prevEl.textContent = expr;
+        expr = "Error";
+        justEvaluated = true;
+      }
+      renderCalc();
+      return;
+    }
+
+    // digits, operators, decimal
+    if (justEvaluated) {
+      if (/^[0-9.]$/.test(k)) { expr = ""; }
+      else { prevEl.textContent = "\u00A0"; }
+      justEvaluated = false;
+    }
+    if (expr === "Error") expr = "";
+    expr += k;
+    renderCalc();
+  });
+
+  // keyboard support for calculator
+  document.addEventListener('keydown', function (e) {
+    var activeTag = (document.activeElement && document.activeElement.tagName) || '';
+    if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
+    if (document.getElementById('panel-calc').hidden) return;
+    if (/^[0-9.+\-*/()%]$/.test(e.key)) {
+      document.querySelector('#panel-calc .keys').dispatchEvent(new CustomEvent('noop'));
+      if (justEvaluated && /^[0-9.]$/.test(e.key)) { expr = ""; }
+      else if (justEvaluated) { prevEl.textContent = "\u00A0"; }
+      justEvaluated = false;
+      if (expr === "Error") expr = "";
+      expr += e.key;
+      renderCalc();
+    } else if (e.key === 'Enter' || e.key === '=') {
+      e.preventDefault();
+      try {
+        var result = safeEval(expr);
+        prevEl.textContent = expr + " =";
+        expr = formatNum(result);
+        justEvaluated = true;
+      } catch (err) {
+        prevEl.textContent = expr;
+        expr = "Error";
+        justEvaluated = true;
+      }
+      renderCalc();
+    } else if (e.key === 'Backspace') {
+      expr = expr.slice(0, -1); justEvaluated = false; renderCalc();
+    } else if (e.key === 'Escape') {
+      expr = ""; prevEl.textContent = "\u00A0"; justEvaluated = false; renderCalc();
+    }
+  });
+
+  renderCalc();
+
+  /* ---------------- UNIT CONVERTER ---------------- */
+  // base-unit factors: value_in_base = value * factor
+  var categories = {
+    length: {
+      label: "Length",
+      base: "m",
+      units: {
+        mm: { label: "millimeters (mm)", factor: 0.001 },
+        cm: { label: "centimeters (cm)", factor: 0.01 },
+        m:  { label: "meters (m)", factor: 1 },
+        km: { label: "kilometers (km)", factor: 1000 },
+        in: { label: "inches (in)", factor: 0.0254 },
+        ft: { label: "feet (ft)", factor: 0.3048 },
+        yd: { label: "yards (yd)", factor: 0.9144 },
+        mi: { label: "miles (mi)", factor: 1609.344 }
+      }
+    },
+    mass: {
+      label: "Weight / Mass",
+      base: "kg",
+      units: {
+        mg: { label: "milligrams (mg)", factor: 0.000001 },
+        g:  { label: "grams (g)", factor: 0.001 },
+        kg: { label: "kilograms (kg)", factor: 1 },
+        oz: { label: "ounces (oz)", factor: 0.0283495 },
+        lb: { label: "pounds (lb)", factor: 0.453592 },
+        st: { label: "stone (st)", factor: 6.35029 },
+        t:  { label: "metric tons (t)", factor: 1000 }
+      }
+    },
+    volume: {
+      label: "Volume",
+      base: "L",
+      units: {
+        ml:    { label: "milliliters (mL)", factor: 0.001 },
+        l:     { label: "liters (L)", factor: 1 },
+        cm3:   { label: "cubic cm (cm³)", factor: 0.001 },
+        m3:    { label: "cubic meters (m³)", factor: 1000 },
+        tsp:   { label: "teaspoons (tsp)", factor: 0.00492892 },
+        tbsp:  { label: "tablespoons (tbsp)", factor: 0.0147868 },
+        flozUS:{ label: "fl oz (US)", factor: 0.0295735 },
+        cupUS: { label: "cups (US)", factor: 0.236588 },
+        pintUS:{ label: "pints (US)", factor: 0.473176 },
+        galUS: { label: "gallons (US)", factor: 3.78541 }
+      }
+    },
+    area: {
+      label: "Area",
+      base: "m2",
+      units: {
+        mm2: { label: "sq. millimeters (mm²)", factor: 0.000001 },
+        cm2: { label: "sq. centimeters (cm²)", factor: 0.0001 },
+        m2:  { label: "sq. meters (m²)", factor: 1 },
+        ha:  { label: "hectares (ha)", factor: 10000 },
+        km2: { label: "sq. kilometers (km²)", factor: 1000000 },
+        in2: { label: "sq. inches (in²)", factor: 0.00064516 },
+        ft2: { label: "sq. feet (ft²)", factor: 0.09290304 },
+        ac:  { label: "acres (ac)", factor: 4046.8564224 }
+      }
+    },
+    speed: {
+      label: "Speed",
+      base: "mps",
+      units: {
+        mps:  { label: "meters / sec (m/s)", factor: 1 },
+        kph:  { label: "kilometers / hr (km/h)", factor: 0.277778 },
+        mph:  { label: "miles / hr (mph)", factor: 0.44704 },
+        fps:  { label: "feet / sec (ft/s)", factor: 0.3048 },
+        knot: { label: "knots (kn)", factor: 0.514444 }
+      }
+    },
+    temperature: {
+      label: "Temperature",
+      base: "C",
+      special: true,
+      units: {
+        C: { label: "Celsius (°C)" },
+        F: { label: "Fahrenheit (°F)" },
+        K: { label: "Kelvin (K)" }
+      }
+    }
+  };
+
+  var catSelect = document.getElementById('convCategory');
+  var fromUnitSelect = document.getElementById('convFromUnit');
+  var toUnitSelect = document.getElementById('convToUnit');
+  var fromValue = document.getElementById('convFromValue');
+  var toValue = document.getElementById('convToValue');
+  var convNote = document.getElementById('convNote');
+
+  Object.keys(categories).forEach(function (key) {
+    var opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = categories[key].label;
+    catSelect.appendChild(opt);
+  });
+
+  function populateUnitSelects(catKey) {
+    var cat = categories[catKey];
+    [fromUnitSelect, toUnitSelect].forEach(function (sel) { sel.innerHTML = ""; });
+    Object.keys(cat.units).forEach(function (uKey) {
+      [fromUnitSelect, toUnitSelect].forEach(function (sel) {
+        var opt = document.createElement('option');
+        opt.value = uKey;
+        opt.textContent = cat.units[uKey].label;
+        sel.appendChild(opt);
+      });
+    });
+    var keys = Object.keys(cat.units);
+    fromUnitSelect.value = keys[0];
+    toUnitSelect.value = keys.length > 1 ? keys[1] : keys[0];
+  }
+
+  function tempToC(val, unit) {
+    if (unit === "C") return val;
+    if (unit === "F") return (val - 32) * 5 / 9;
+    if (unit === "K") return val - 273.15;
+  }
+  function cToTemp(celsius, unit) {
+    if (unit === "C") return celsius;
+    if (unit === "F") return celsius * 9 / 5 + 32;
+    if (unit === "K") return celsius + 273.15;
+  }
+
+  function roundDisplay(n) {
+    if (!isFinite(n)) return "";
+    if (Math.abs(n) >= 1e9 || (Math.abs(n) < 1e-7 && n !== 0)) return n.toExponential(5);
+    var rounded = Math.round(n * 1e8) / 1e8;
+    return String(rounded);
+  }
+
+  function runConversion(sourceEl) {
+    var catKey = catSelect.value;
+    var cat = categories[catKey];
+    var fromU = fromUnitSelect.value;
+    var toU = toUnitSelect.value;
+
+    if (sourceEl === "from") {
+      var raw = parseFloat(fromValue.value);
+      if (isNaN(raw)) { toValue.value = ""; return; }
+      var result;
+      if (cat.special) {
+        result = cToTemp(tempToC(raw, fromU), toU);
+      } else {
+        var baseVal = raw * cat.units[fromU].factor;
+        result = baseVal / cat.units[toU].factor;
+      }
+      toValue.value = roundDisplay(result);
+    } else {
+      var rawTo = parseFloat(toValue.value);
+      if (isNaN(rawTo)) { fromValue.value = ""; return; }
+      var result2;
+      if (cat.special) {
+        result2 = cToTemp(tempToC(rawTo, toU), fromU);
+      } else {
+        var baseVal2 = rawTo * cat.units[toU].factor;
+        result2 = baseVal2 / cat.units[fromU].factor;
+      }
+      fromValue.value = roundDisplay(result2);
+    }
+    convNote.textContent = "1 " + fromUnitSelect.options[fromUnitSelect.selectedIndex].text + " = " +
+      roundDisplay(cat.special ? cToTemp(tempToC(1, fromU), toU) : cat.units[fromU].factor / cat.units[toU].factor) +
+      " " + toUnitSelect.options[toUnitSelect.selectedIndex].text;
+  }
+
+  catSelect.addEventListener('change', function () {
+    populateUnitSelects(catSelect.value);
+    fromValue.value = "1";
+    runConversion("from");
+  });
+  fromUnitSelect.addEventListener('change', function () { runConversion("from"); });
+  toUnitSelect.addEventListener('change', function () { runConversion("from"); });
+  fromValue.addEventListener('input', function () { runConversion("from"); });
+  toValue.addEventListener('input', function () { runConversion("to"); });
+
+  document.getElementById('convSwap').addEventListener('click', function () {
+    var fu = fromUnitSelect.value, tu = toUnitSelect.value;
+    fromUnitSelect.value = tu; toUnitSelect.value = fu;
+    runConversion("from");
+  });
+
+  // init converter
+  catSelect.value = "length";
+  populateUnitSelects("length");
+  fromUnitSelect.value = "in";
+  toUnitSelect.value = "mm";
+  fromValue.value = "1";
+  runConversion("from");
+
+  /* ---------------- ANGLE & RADIUS ---------------- */
+  var circRadius = document.getElementById('circRadius');
+  var circDiameter = document.getElementById('circDiameter');
+  var circResult = document.getElementById('circResult');
+
+  function updateCircleFromRadius() {
+    var r = parseFloat(circRadius.value);
+    if (isNaN(r) || r < 0) { circResult.textContent = ""; return; }
+    circDiameter.value = roundDisplay(r * 2);
+    var circumference = 2 * Math.PI * r;
+    var area = Math.PI * r * r;
+    circResult.innerHTML = "circumference <b>" + roundDisplay(circumference) + "</b> &nbsp;·&nbsp; area <b>" + roundDisplay(area) + "</b>";
+  }
+  function updateCircleFromDiameter() {
+    var d = parseFloat(circDiameter.value);
+    if (isNaN(d) || d < 0) { circResult.textContent = ""; return; }
+    circRadius.value = roundDisplay(d / 2);
+    var r = d / 2;
+    var circumference = Math.PI * d;
+    var area = Math.PI * r * r;
+    circResult.innerHTML = "circumference <b>" + roundDisplay(circumference) + "</b> &nbsp;·&nbsp; area <b>" + roundDisplay(area) + "</b>";
+  }
+  circRadius.addEventListener('input', updateCircleFromRadius);
+  circDiameter.addEventListener('input', updateCircleFromDiameter);
+  updateCircleFromRadius();
+
+  var angDeg = document.getElementById('angDeg');
+  var angRad = document.getElementById('angRad');
+  var angGrad = document.getElementById('angGrad');
+
+  function fromDeg() {
+    var d = parseFloat(angDeg.value);
+    if (isNaN(d)) { angRad.value = ""; angGrad.value = ""; return; }
+    angRad.value = roundDisplay(d * Math.PI / 180);
+    angGrad.value = roundDisplay(d * 10 / 9);
+  }
+  function fromRad() {
+    var r = parseFloat(angRad.value);
+    if (isNaN(r)) { angDeg.value = ""; angGrad.value = ""; return; }
+    var d = r * 180 / Math.PI;
+    angDeg.value = roundDisplay(d);
+    angGrad.value = roundDisplay(d * 10 / 9);
+  }
+  function fromGrad() {
+    var g = parseFloat(angGrad.value);
+    if (isNaN(g)) { angDeg.value = ""; angRad.value = ""; return; }
+    var d = g * 9 / 10;
+    angDeg.value = roundDisplay(d);
+    angRad.value = roundDisplay(d * Math.PI / 180);
+  }
+  angDeg.addEventListener('input', fromDeg);
+  angRad.addEventListener('input', fromRad);
+  angGrad.addEventListener('input', fromGrad);
+  fromDeg();
+
+  var arcRadius = document.getElementById('arcRadius');
+  var arcAngle = document.getElementById('arcAngle');
+  var arcResult = document.getElementById('arcResult');
+
+  function updateArc() {
+    var r = parseFloat(arcRadius.value);
+    var a = parseFloat(arcAngle.value);
+    if (isNaN(r) || isNaN(a) || r < 0) { arcResult.textContent = ""; return; }
+    var rad = a * Math.PI / 180;
+    var arcLength = r * rad;
+    var chord = 2 * r * Math.sin(rad / 2);
+    var sectorArea = 0.5 * r * r * rad;
+    arcResult.innerHTML = "arc length <b>" + roundDisplay(arcLength) + "</b> &nbsp;·&nbsp; chord <b>" + roundDisplay(chord) +
+      "</b> &nbsp;·&nbsp; sector area <b>" + roundDisplay(sectorArea) + "</b>";
+  }
+  arcRadius.addEventListener('input', updateArc);
+  arcAngle.addEventListener('input', updateArc);
+  updateArc();
+
+  /* ---------------- THERMAL EXPANSION ---------------- */
+  var teMaterials = {
+    al6061:   { label: "Aluminum 6061", cte: 23.6 },
+    al7075:   { label: "Aluminum 7075", cte: 23.2 },
+    al1100:   { label: "Aluminum 1100 (pure)", cte: 23.6 },
+    ss304:    { label: "Stainless Steel 304", cte: 17.3 },
+    ss316:    { label: "Stainless Steel 316", cte: 16.0 },
+    ss410:    { label: "Stainless Steel 410", cte: 9.9 },
+    toolA2:   { label: "Tool Steel A2", cte: 10.8 },
+    toolD2:   { label: "Tool Steel D2", cte: 10.4 },
+    toolO1:   { label: "Tool Steel O1 (hardened)", cte: 11.0 },
+    mild1018: { label: "Mild / Carbon Steel 1018", cte: 11.5 },
+    ti64:     { label: "Titanium Ti-6Al-4V", cte: 8.6 },
+    brass260: { label: "Brass C260", cte: 20.0 },
+    copper:   { label: "Copper", cte: 17.0 },
+    bronze:   { label: "Bronze C932", cte: 18.0 },
+    nickel:   { label: "Nickel", cte: 13.0 },
+    invar:    { label: "Invar", cte: 1.2 }
+  };
+
+  var teMaterial = document.getElementById('teMaterial');
+  var teLength = document.getElementById('teLength');
+  var teStartTemp = document.getElementById('teStartTemp');
+  var teTargetTemp = document.getElementById('teTargetTemp');
+  var teDeltaL = document.getElementById('teDeltaL');
+  var teResult = document.getElementById('teResult');
+
+  Object.keys(teMaterials).forEach(function (key) {
+    var opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = teMaterials[key].label + " (" + teMaterials[key].cte + " \u00B5m/m\u00B7\u00B0C)";
+    teMaterial.appendChild(opt);
+  });
+  teMaterial.value = "al6061";
+
+  var teLastEdited = 'targetTemp'; // which of targetTemp / deltaL the user last typed into
+
+  function teAlphaPerC() {
+    return teMaterials[teMaterial.value].cte * 1e-6; // strain per degree C
+  }
+
+  function teCompute() {
+    var L0 = parseFloat(teLength.value);
+    var T0 = parseFloat(teStartTemp.value);
+    var alpha = teAlphaPerC();
+    if (isNaN(L0) || L0 <= 0 || isNaN(T0)) { teResult.textContent = ""; return; }
+
+    if (teLastEdited === 'deltaL') {
+      var dL = parseFloat(teDeltaL.value);
+      if (isNaN(dL)) { teResult.textContent = ""; return; }
+      var dT = dL / (alpha * L0);
+      var T1 = T0 + dT;
+      teTargetTemp.value = roundDisplay(T1);
+      teResult.innerHTML = "target temp <b>" + roundDisplay(T1) + " \u00B0C</b> &nbsp;\u00B7&nbsp; new length <b>" +
+        roundDisplay(L0 + dL) + " mm</b>";
+    } else {
+      var T1b = parseFloat(teTargetTemp.value);
+      if (isNaN(T1b)) { teResult.textContent = ""; return; }
+      var dTb = T1b - T0;
+      var dLb = alpha * L0 * dTb;
+      teDeltaL.value = roundDisplay(dLb);
+      teResult.innerHTML = "\u0394 length <b>" + roundDisplay(dLb) + " mm</b> &nbsp;\u00B7&nbsp; new length <b>" +
+        roundDisplay(L0 + dLb) + " mm</b>";
+    }
+  }
+
+  teMaterial.addEventListener('change', teCompute);
+  teLength.addEventListener('input', teCompute);
+  teStartTemp.addEventListener('input', teCompute);
+  teTargetTemp.addEventListener('input', function () { teLastEdited = 'targetTemp'; teCompute(); });
+  teDeltaL.addEventListener('input', function () { teLastEdited = 'deltaL'; teCompute(); });
+  teCompute();
+
+  /* ---------------- STOPWATCH / TIMER ---------------- */
+  var timerModeBtns = document.querySelectorAll('.timer-mode-btn');
+  var timerReadout = document.getElementById('timerReadout');
+  var timerDurationRow = document.getElementById('timerDurationRow');
+  var timerMinInput = document.getElementById('timerMin');
+  var timerSecInput = document.getElementById('timerSec');
+  var timerStartBtn = document.getElementById('timerStartBtn');
+  var timerLapBtn = document.getElementById('timerLapBtn');
+  var timerResetBtn = document.getElementById('timerResetBtn');
+  var timerLapsEl = document.getElementById('timerLaps');
+
+  var timerMode = 'stopwatch'; // 'stopwatch' | 'timer'
+  var timerRunning = false;
+  var timerLastTick = null;
+  var timerElapsedMs = 0;   // stopwatch accumulated
+  var timerRemainingMs = 0; // countdown remaining
+  var timerIntervalId = null;
+  var timerLapNum = 0;
+
+  function timerPad(n) { n = Math.floor(n); return (n < 10 ? '0' : '') + n; }
+
+  function formatStopwatch(ms) {
+    if (ms < 0) ms = 0;
+    var cs = Math.floor((ms % 1000) / 10);
+    var s = Math.floor(ms / 1000) % 60;
+    var m = Math.floor(ms / 60000) % 60;
+    var h = Math.floor(ms / 3600000);
+    if (h > 0) return h + ':' + timerPad(m) + ':' + timerPad(s);
+    return timerPad(m) + ':' + timerPad(s) + '.' + timerPad(cs);
+  }
+  function formatCountdown(ms) {
+    if (ms < 0) ms = 0;
+    var totalSec = Math.ceil(ms / 1000);
+    var s = totalSec % 60;
+    var m = Math.floor(totalSec / 60) % 60;
+    var h = Math.floor(totalSec / 3600);
+    if (h > 0) return h + ':' + timerPad(m) + ':' + timerPad(s);
+    return timerPad(m) + ':' + timerPad(s);
+  }
+
+  function timerRender() {
+    timerReadout.textContent = (timerMode === 'stopwatch') ? formatStopwatch(timerElapsedMs) : formatCountdown(timerRemainingMs);
+  }
+
+  function timerFireAlarm() {
+    timerReadout.classList.add('timer-alarm');
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [0, 0.25, 0.5].forEach(function (offset) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + offset + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.18);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + 0.2);
+      });
+    } catch (e) { /* Web Audio unavailable, skip the beep */ }
+  }
+
+  function timerTick() {
+    var now = Date.now();
+    var delta = now - timerLastTick;
+    timerLastTick = now;
+    if (timerMode === 'stopwatch') {
+      timerElapsedMs += delta;
+      timerRender();
+    } else {
+      timerRemainingMs -= delta;
+      if (timerRemainingMs <= 0) {
+        timerRemainingMs = 0;
+        timerRender();
+        timerPause();
+        timerFireAlarm();
+        return;
+      }
+      timerRender();
+    }
+  }
+
+  function timerStart() {
+    if (timerRunning) return;
+    if (timerMode === 'timer' && timerRemainingMs <= 0) {
+      var mins = parseFloat(timerMinInput.value) || 0;
+      var secs = parseFloat(timerSecInput.value) || 0;
+      timerRemainingMs = (mins * 60 + secs) * 1000;
+      if (timerRemainingMs <= 0) return;
+    }
+    timerRunning = true;
+    timerLastTick = Date.now();
+    timerIntervalId = setInterval(timerTick, 50);
+    timerStartBtn.textContent = 'Pause';
+    timerReadout.classList.remove('timer-alarm');
+  }
+  function timerPause() {
+    if (!timerRunning) return;
+    timerRunning = false;
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+    timerStartBtn.textContent = 'Resume';
+  }
+  function timerReset() {
+    timerPause();
+    timerLapNum = 0;
+    timerLapsEl.innerHTML = '';
+    if (timerMode === 'stopwatch') { timerElapsedMs = 0; } else { timerRemainingMs = 0; }
+    timerStartBtn.textContent = 'Start';
+    timerReadout.classList.remove('timer-alarm');
+    timerRender();
+  }
+
+  timerStartBtn.addEventListener('click', function () {
+    if (timerRunning) { timerPause(); } else { timerStart(); }
+  });
+  timerResetBtn.addEventListener('click', timerReset);
+  timerLapBtn.addEventListener('click', function () {
+    if (timerMode !== 'stopwatch' || !timerRunning) return;
+    timerLapNum++;
+    var row = document.createElement('div');
+    row.className = 'timer-lap-row';
+    row.innerHTML = '<span>lap ' + timerLapNum + '</span><span>' + formatStopwatch(timerElapsedMs) + '</span>';
+    timerLapsEl.insertBefore(row, timerLapsEl.firstChild);
+  });
+
+  timerModeBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var newMode = btn.getAttribute('data-mode');
+      if (newMode === timerMode) return;
+      timerReset();
+      timerMode = newMode;
+      timerModeBtns.forEach(function (b) { b.classList.toggle('active', b === btn); });
+      timerDurationRow.hidden = (timerMode !== 'timer');
+      timerLapBtn.style.display = (timerMode === 'stopwatch') ? '' : 'none';
+      timerRender();
+    });
+  });
+
+  timerRender();
+
+  /* ---------------- MATERIAL PROPERTIES ---------------- */
+  var materialsDB = {
+    grayIron:    { label: "Gray Cast Iron",           group: "Irons",         tensile: 200,  yield: 130,  density: 7.20, melt: 1200, modulus: 110 },
+    ductileIron: { label: "Ductile (Nodular) Iron",    group: "Irons",         tensile: 550,  yield: 380,  density: 7.10, melt: 1150, modulus: 169 },
+    mild1018:    { label: "Mild Steel 1018",           group: "Steels",        tensile: 440,  yield: 370,  density: 7.87, melt: 1425, modulus: 205 },
+    ss304:       { label: "Stainless Steel 304",       group: "Steels",        tensile: 505,  yield: 215,  density: 8.00, melt: 1425, modulus: 193 },
+    ss316:       { label: "Stainless Steel 316",       group: "Steels",        tensile: 515,  yield: 205,  density: 8.00, melt: 1390, modulus: 193 },
+    ss410:       { label: "Stainless Steel 410 (hardened)", group: "Steels",   tensile: 700,  yield: 550,  density: 7.80, melt: 1500, modulus: 200 },
+    toolA2:      { label: "Tool Steel A2 (hardened)",  group: "Steels",        tensile: 1900, yield: 1650, density: 7.86, melt: 1425, modulus: 203 },
+    toolD2:      { label: "Tool Steel D2 (hardened)",  group: "Steels",        tensile: 2000, yield: 1400, density: 7.70, melt: 1421, modulus: 210 },
+    toolO1:      { label: "Tool Steel O1 (hardened)",  group: "Steels",        tensile: 1600, yield: 1400, density: 7.85, melt: 1420, modulus: 200 },
+    ti64:        { label: "Titanium Ti-6Al-4V",        group: "Titanium",      tensile: 950,  yield: 880,  density: 4.43, melt: 1650, modulus: 114 },
+    al6061:      { label: "Aluminum 6061-T6",          group: "Aluminums",     tensile: 310,  yield: 276,  density: 2.70, melt: 650,  modulus: 69 },
+    al7075:      { label: "Aluminum 7075-T6",          group: "Aluminums",     tensile: 572,  yield: 503,  density: 2.81, melt: 635,  modulus: 72 },
+    al1100:      { label: "Aluminum 1100 (annealed)",  group: "Aluminums",     tensile: 90,   yield: 34,   density: 2.71, melt: 650,  modulus: 69 },
+    brass260:    { label: "Brass C260",                group: "Copper Alloys",tensile: 340,  yield: 130,  density: 8.53, melt: 930,  modulus: 110 },
+    bronze:      { label: "Bronze C932",               group: "Copper Alloys",tensile: 240,  yield: 125,  density: 8.95, melt: 900,  modulus: 100 },
+    copper:      { label: "Copper (annealed)",         group: "Copper Alloys",tensile: 220,  yield: 70,   density: 8.96, melt: 1085, modulus: 117 },
+    nickel:      { label: "Nickel",                    group: "Other Metals",  tensile: 400,  yield: 200,  density: 8.90, melt: 1455, modulus: 200 },
+    invar:       { label: "Invar",                     group: "Other Metals",  tensile: 500,  yield: 276,  density: 8.05, melt: 1427, modulus: 141 },
+    abs:         { label: "ABS",                       group: "Plastics",      tensile: 40,   yield: 40,   density: 1.04, melt: 230,  modulus: 2.3 },
+    asa:         { label: "ASA",                       group: "Plastics",      tensile: 45,   yield: 45,   density: 1.07, melt: 250,  modulus: 2.0 },
+    pla:         { label: "PLA",                       group: "Plastics",      tensile: 50,   yield: 50,   density: 1.24, melt: 200,  modulus: 3.5 },
+    petg:        { label: "PETG",                      group: "Plastics",      tensile: 50,   yield: 50,   density: 1.27, melt: 235,  modulus: 2.1 },
+    pet:         { label: "PET",                       group: "Plastics",      tensile: 55,   yield: 55,   density: 1.38, melt: 260,  modulus: 2.8 },
+    nylon:       { label: "Nylon (PA12)",               group: "Plastics",      tensile: 48,   yield: 45,   density: 1.02, melt: 250,  modulus: 1.7 },
+    acetal:      { label: "Acetal (POM / Delrin)",      group: "Plastics",      tensile: 70,   yield: 65,   density: 1.41, melt: 175,  modulus: 2.9 },
+    tpu:         { label: "TPU (95A)",                  group: "Plastics",      tensile: 40,   yield: 20,   density: 1.20, melt: 220,  modulus: 0.05 },
+    pc:          { label: "Polycarbonate (PC)",         group: "Plastics",      tensile: 65,   yield: 62,   density: 1.20, melt: 270,  modulus: 2.4 }
+  };
+  var MP_GROUP_ORDER = ["Irons", "Steels", "Titanium", "Aluminums", "Copper Alloys", "Other Metals", "Plastics"];
+
+  var mpMaterial = document.getElementById('mpMaterial');
+  var mpGrouped = {};
+  Object.keys(materialsDB).forEach(function (key) {
+    var g = materialsDB[key].group;
+    if (!mpGrouped[g]) mpGrouped[g] = [];
+    mpGrouped[g].push(key);
+  });
+  MP_GROUP_ORDER.forEach(function (group) {
+    if (!mpGrouped[group]) return;
+    var og = document.createElement('optgroup');
+    og.label = group;
+    mpGrouped[group].forEach(function (key) {
+      var opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = materialsDB[key].label;
+      og.appendChild(opt);
+    });
+    mpMaterial.appendChild(og);
+  });
+  mpMaterial.value = 'al6061';
+
+  function mpUpdate() {
+    var m = materialsDB[mpMaterial.value];
+    document.getElementById('mpTensile').textContent = m.tensile.toFixed(0) + ' MPa';
+    document.getElementById('mpYield').textContent = m.yield.toFixed(0) + ' MPa';
+    document.getElementById('mpDensity').textContent = m.density.toFixed(2) + ' g/cm\u00B3';
+    document.getElementById('mpMelt').textContent = m.melt.toFixed(0) + ' \u00B0C';
+    document.getElementById('mpModulus').textContent = m.modulus.toFixed(1) + ' GPa';
+  }
+  mpMaterial.addEventListener('change', mpUpdate);
+  mpUpdate();
+
+  /* ---------------- NOTEPAD ---------------- */
+  var notesArea = document.getElementById('notesArea');
+  var notesSavedStatus = document.getElementById('notesSavedStatus');
+  var notesClearBtn = document.getElementById('notesClearBtn');
+  var NOTES_KEY = 'measure-toolkit-notes';
+
+  (function restoreNotes() {
+    try {
+      var saved = window.localStorage.getItem(NOTES_KEY);
+      if (saved !== null) notesArea.value = saved;
+    } catch (e) { /* storage unavailable, start blank */ }
+  })();
+
+  var notesSaveTimeout = null;
+  function notesSaveNow() {
+    try {
+      window.localStorage.setItem(NOTES_KEY, notesArea.value);
+      notesSavedStatus.textContent = 'saved';
+    } catch (e) {
+      notesSavedStatus.textContent = 'not saved';
+    }
+  }
+  notesArea.addEventListener('input', function () {
+    notesSavedStatus.textContent = 'typing\u2026';
+    if (notesSaveTimeout) clearTimeout(notesSaveTimeout);
+    notesSaveTimeout = setTimeout(notesSaveNow, 500);
+  });
+  notesClearBtn.addEventListener('click', function () {
+    notesArea.value = '';
+    notesSaveNow();
+    notesArea.focus();
+  });
+
+})();
+</script>
+</body>
+</html>
