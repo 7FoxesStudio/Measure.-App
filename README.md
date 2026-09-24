@@ -1,4 +1,4 @@
-MEASURE — building a portable Windows .exe
+MEASURE APP- All-in-one Measurement & Calculation Dashboard
 ============================================
 ![Measure screenshot](Measure.png)
 You need Node.js installed on the Windows PC you're building from
