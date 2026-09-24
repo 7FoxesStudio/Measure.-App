@@ -1,8 +1,6 @@
-![Measure screenshot](Measure.png)
-
 MEASURE — building a portable Windows .exe
 ============================================
-
+![Measure screenshot](Measure.png)
 You need Node.js installed on the Windows PC you're building from
 (download from nodejs.org — the LTS version is fine).
 
