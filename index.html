@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Measure.</title>
 <meta name="theme-color" content="#C1592A">
 <meta name="mobile-web-app-capable" content="yes">
@@ -85,9 +85,20 @@
     display: flex;
     flex-direction: column;
   }
-  @media (max-width: 860px) {
-    body { height: auto; overflow: visible; }
-    .app { height: auto; padding: 20px 16px calc(30px + env(safe-area-inset-bottom, 0px)); }
+  @media (max-width: 860px), (max-height: 500px) {
+    .app { padding: 20px 20px 0; }
+    /* WKWebView bug: after the keyboard dismisses it can leave the page scrolled/shifted
+       and fail to reset. Pinning body (not html, which breaks safe-area inheritance) as
+       fixed stops WebKit's automatic "scroll focused input into view" behavior from
+       engaging at all, since fixed-position content doesn't participate in that scroll
+       adjustment. The safe-area padding is applied directly here since a fixed element
+       doesn't reliably inherit it from an ancestor. */
+    body {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      padding-top: env(safe-area-inset-top, 0px);
+    }
   }
 
   /* ---- header ---- */
@@ -217,10 +228,9 @@
     flex-direction: column;
   }
   .io-dropdown-panel[hidden] { display: none; }
-  .io-dropdown-panel .io-unit {
-    border-bottom: 1px solid var(--steel-line);
+  .io-dropdown-panel .io-unit + .io-unit {
+    border-top: 1px solid var(--steel-line);
   }
-  .io-dropdown-panel .io-unit:last-child { border-bottom: none; }
   .grid-select-wrap {
     flex: none;
     display: flex;
@@ -437,18 +447,69 @@
     opacity: 1;
   }
 
-  @media (max-width: 860px) {
+  @media (max-width: 860px), (max-height: 500px) {
     .drag-handle, .resize-grip { display: none; }
-    .io-row { flex-direction: column; }
+    .io-row { margin-bottom: 10px; }
+    .io-dropdown { flex: 1; }
+    .io-dropdown-trigger { width: 100%; min-width: 0; }
     .grid-select-wrap { display: none; }
+    /* iOS auto-zooms into any text input under 16px and can fail to zoom back out —
+       force every field to at least 16px on mobile regardless of the fluid clamp() sizing */
+    input, select, textarea { font-size: 16px !important; }
     .node-grid {
-      display: flex !important;
-      flex-direction: column;
-      gap: 16px;
+      display: block !important;
+      height: 100%;
     }
-    section.panel { min-height: 0; }
-    .panel-body { overflow: visible; }
+    .node-grid > section.panel { display: none; height: 100%; }
+    .node-grid > section.panel.mobile-active { display: flex; }
     .node-blank { display: none; }
+    footer.foot { display: none; }
+    .ruler-wrap { display: none; }
+  }
+
+  /* ---- mobile bottom tab bar (one tool full-screen at a time) ---- */
+  .mobile-tabbar { display: none; }
+  @media (max-width: 860px), (max-height: 500px) {
+    .mobile-tabbar {
+      display: flex;
+      flex: none;
+      gap: 2px;
+      padding: 12px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+      margin: 0 -20px;
+      background: var(--panel);
+      border-top: 1px solid var(--steel-line);
+      overflow: hidden;
+    }
+    /* every tab shares the available width equally and is allowed to shrink
+       (min-width: 0), so all seven always fit — label/icon scale with screen width */
+    .mobile-tab {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      padding: 9px 1px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--ink-soft);
+      cursor: pointer;
+    }
+    .mobile-tab.active {
+      color: var(--blue);
+      background: var(--blue-soft);
+    }
+    .mobile-tab-icon { width: clamp(20px, 6vw, 24px); height: clamp(20px, 6vw, 24px); display: block; flex: none; }
+    .mobile-tab-icon svg { width: 100%; height: 100%; }
+    .mobile-tab-label {
+      font-family: var(--mono);
+      font-size: clamp(7px, 2.4vw, 9.5px);
+      letter-spacing: 0;
+      white-space: nowrap;
+      max-width: 100%;
+    }
   }
 
   /* ---- calculator ---- */
@@ -805,6 +866,100 @@
     opacity: 0.75;
     flex: none;
   }
+
+  /* ---- desktop ruler (only shown inside the Windows app) ---- */
+  body.has-ruler footer.foot { display: none; }
+  .ruler-wrap { position: relative; flex: none; margin-top: 10px; }
+  .ruler-bar {
+    position: relative;
+    height: 38px;
+    background: var(--panel);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .ruler-bar canvas { display: block; width: 100%; height: 100%; }
+  .ruler-controls {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-left: 14px;
+    background: linear-gradient(to right, transparent, var(--panel) 14px);
+  }
+  .ruler-status {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+  .ruler-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-sm);
+    padding: 3px 9px;
+    min-width: 30px;
+    cursor: pointer;
+  }
+  .ruler-btn:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .ruler-cal {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 8px);
+    width: max-content;
+    min-width: 340px;
+    max-width: calc(100vw - 48px);
+    z-index: 50;
+    background: var(--panel);
+    border: 1px solid var(--steel-line);
+    border-radius: var(--radius-md);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+    padding: 14px 16px;
+  }
+  .ruler-cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed var(--steel-line);
+  }
+  .ruler-cal-status {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+    white-space: pre-line;
+  }
+  .ruler-cal-section { margin-bottom: 14px; }
+  .ruler-cal-row { display: flex; align-items: center; gap: 8px; }
+  .ruler-cal-row input[type="text"] { width: 110px; }
+  .ruler-cal-row input[type="range"] { flex: 1; accent-color: var(--blue); }
+  .ruler-cal-actions { justify-content: flex-end; margin-top: 4px; }
+  .ruler-card-box { overflow-x: auto; padding: 4px 0 10px; }
+  .ruler-card {
+    margin: 0 auto;
+    border: 1.5px solid var(--blue);
+    border-radius: 5px;
+    background: var(--blue-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue-ink);
+  }
 </style>
 </head>
 <body>
@@ -868,6 +1023,12 @@
           <span class="track"><span class="thumb"></span></span>
           <span class="num">07</span>
           <span class="label-text">Notepad</span>
+        </label>
+        <label class="io-unit" id="io-ruler" hidden>
+          <input type="checkbox" id="rulerToggle" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="num">08</span>
+          <span class="label-text">Ruler</span>
         </label>
       </div>
     </div>
@@ -1144,6 +1305,51 @@
   </section>
 
   </div><!-- /.node-grid -->
+
+  <!-- desktop-app-only ruler: stays hidden unless the Electron bridge is present -->
+  <div class="ruler-wrap" id="rulerWrap" hidden>
+    <div class="ruler-cal" id="rulerCal" hidden>
+      <div class="ruler-cal-head">
+        <span>calibrate ruler</span>
+        <button type="button" class="ruler-btn" id="rulerCalClose" title="Close">&times;</button>
+      </div>
+      <div class="ruler-cal-status" id="rulerCalStatus"></div>
+
+      <div class="ruler-cal-section">
+        <label class="field-label" for="rulerDiag">type your screen size (diagonal, inches)</label>
+        <div class="ruler-cal-row">
+          <input type="text" inputmode="decimal" id="rulerDiag" placeholder="e.g. 27">
+          <button type="button" class="ruler-btn" id="rulerDiagApply">Apply</button>
+        </div>
+      </div>
+
+      <div class="ruler-cal-section">
+        <span class="field-label">or match a credit card &mdash; hold one to the screen and drag until the outline fits</span>
+        <div class="ruler-card-box"><div class="ruler-card" id="rulerCard"></div></div>
+        <div class="ruler-cal-row">
+          <input type="range" id="rulerCardSlider" min="40" max="300" step="0.25" value="100">
+          <button type="button" class="ruler-btn" id="rulerCardApply">Use this</button>
+        </div>
+      </div>
+
+      <div class="ruler-cal-row ruler-cal-actions">
+        <button type="button" class="ruler-btn" id="rulerAutoBtn">Use auto-detect</button>
+        <button type="button" class="ruler-btn" id="rulerCalDone">Done</button>
+      </div>
+    </div>
+
+    <div class="ruler-bar">
+      <canvas id="rulerCanvas"></canvas>
+      <div class="ruler-controls">
+        <span class="ruler-status" id="rulerStatus"></span>
+        <button type="button" class="ruler-btn" id="rulerUnitBtn" title="Switch between millimetres and inches">mm</button>
+        <button type="button" class="ruler-btn" id="rulerCalBtn" title="Calibrate the ruler to this screen">cal</button>
+        <button type="button" class="ruler-btn" id="rulerHideBtn" title="Hide the ruler (turn back on from Tools)">&times;</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="mobile-tabbar" id="mobileTabbar" aria-label="Choose a tool"></nav>
 
   <footer class="foot">built for quick reference — no data leaves this page</footer>
 </div>
@@ -1517,7 +1723,7 @@
   }
 
   var savedState = loadSegmentState();
-  var ioInputs = document.querySelectorAll('.io-unit input[type="checkbox"]');
+  var ioInputs = document.querySelectorAll('.io-unit input[type="checkbox"][data-target]');
 
   function applyToggle(input) {
     var panel = document.getElementById(input.getAttribute('data-target'));
@@ -1540,6 +1746,7 @@
       saveSegmentState(state);
       layoutGrid();
       ioDropdownUpdateLabel();
+      renderMobileTabs();
     });
   });
 
@@ -1550,8 +1757,8 @@
   var ioDropdownLabel = document.getElementById('ioDropdownLabel');
 
   function ioDropdownUpdateLabel() {
-  ioDropdownLabel.textContent = 'Tools';
-}
+    ioDropdownLabel.textContent = 'Tools';
+  }
 
   function ioDropdownClose() {
     ioDropdownPanel.hidden = true;
@@ -1579,10 +1786,71 @@
 
   layoutGrid();
 
+  /* ---- mobile bottom tab bar (one tool full-screen at a time) ---- */
+  var MOBILE_TOOLS = [
+    { id: 'panel-calc', label: 'Calc',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="7" y1="7.2" x2="17" y2="7.2"/><circle cx="7.5" cy="12" r="0.9"/><circle cx="12" cy="12" r="0.9"/><circle cx="16.5" cy="12" r="0.9"/><circle cx="7.5" cy="16" r="0.9"/><circle cx="12" cy="16" r="0.9"/><circle cx="16.5" cy="16" r="0.9"/></svg>' },
+    { id: 'panel-convert', label: 'Convert',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13M13 4l4 4-4 4"/><path d="M20 16H7M11 20l-4-4 4-4"/></svg>' },
+    { id: 'panel-geo', label: 'Angle',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><line x1="12" y1="12" x2="18" y2="7"/></svg>' },
+    { id: 'panel-thermal', label: 'Thermal',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a2 2 0 0 0-2 2v9.3a4 4 0 1 0 4 0V5a2 2 0 0 0-2-2z"/><line x1="12" y1="7" x2="12" y2="14"/></svg>' },
+    { id: 'panel-timer', label: 'Timer',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><line x1="12" y1="13" x2="12" y2="9"/><line x1="12" y1="13" x2="15" y2="14.5"/><line x1="10" y1="2" x2="14" y2="2"/></svg>' },
+    { id: 'panel-material', label: 'Material',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5L12 12l8-4.5M12 12v9"/></svg>' },
+    { id: 'panel-notes', label: 'Notes',
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="7.5" y1="8" x2="16.5" y2="8"/><line x1="7.5" y1="12" x2="16.5" y2="12"/><line x1="7.5" y1="16" x2="13" y2="16"/></svg>' }
+  ];
+
+  var mobileTabbar = document.getElementById('mobileTabbar');
+  var mobileActiveId = null;
+
+  function applyMobileActive() {
+    ALL_IDS.forEach(function (id) {
+      var p = document.getElementById(id);
+      if (p) p.classList.toggle('mobile-active', id === mobileActiveId);
+    });
+  }
+
+  function renderMobileTabs() {
+    var visible = MOBILE_TOOLS.filter(function (t) {
+      var p = document.getElementById(t.id);
+      return p && !p.hidden;
+    });
+    if (visible.length === 0) { mobileTabbar.innerHTML = ''; return; }
+    if (!mobileActiveId || !visible.some(function (t) { return t.id === mobileActiveId; })) {
+      mobileActiveId = visible[0].id;
+    }
+    mobileTabbar.innerHTML = '';
+    visible.forEach(function (t) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mobile-tab' + (t.id === mobileActiveId ? ' active' : '');
+      btn.innerHTML = '<span class="mobile-tab-icon">' + t.icon + '</span><span class="mobile-tab-label">' + t.label + '</span>';
+      btn.addEventListener('click', function () {
+        mobileActiveId = t.id;
+        applyMobileActive();
+        Array.prototype.forEach.call(mobileTabbar.querySelectorAll('.mobile-tab'), function (b) {
+          b.classList.remove('active');
+        });
+        btn.classList.add('active');
+      });
+      mobileTabbar.appendChild(btn);
+    });
+    applyMobileActive();
+  }
+
+  renderMobileTabs();
+
   var resizeRaf = null;
   window.addEventListener('resize', function () {
     if (resizeRaf) cancelAnimationFrame(resizeRaf);
-    resizeRaf = requestAnimationFrame(updateScrollFallback);
+    resizeRaf = requestAnimationFrame(function () {
+      updateScrollFallback();
+      renderMobileTabs();
+    });
   });
 
   /* ---------------- CALCULATOR ---------------- */
@@ -2275,6 +2543,260 @@
     notesSaveNow();
     notesArea.focus();
   });
+  // iOS sometimes auto-scrolls a focused textarea to the bottom once the keyboard
+  // resizes the viewport — force it back to the top after that settles.
+  notesArea.addEventListener('focus', function () {
+    requestAnimationFrame(function () {
+      setTimeout(function () { notesArea.scrollTop = 0; }, 300);
+    });
+  });
+
+  /* ---------------- DESKTOP RULER (Windows app only) ----------------
+     The page can't know how big a monitor really is (CSS "cm" are not real cm), so the
+     desktop app tells us which screen we're on and, when Windows can say, how wide it is.
+     A manual calibration (typed diagonal or credit-card match) always overrides auto-detect.
+     We store the screen's physical WIDTH in mm per display, so changing Windows scaling or
+     resolution doesn't invalidate it. CSS px per mm = screen width in CSS px / width in mm. */
+  (function rulerInit() {
+    var bridge = window.measureDesktop;
+    if (!bridge) return; // web and phone builds: nothing to do
+
+    var wrap = document.getElementById('rulerWrap');
+    var canvas = document.getElementById('rulerCanvas');
+    var statusEl = document.getElementById('rulerStatus');
+    var unitBtn = document.getElementById('rulerUnitBtn');
+    var calBtn = document.getElementById('rulerCalBtn');
+    var hideBtn = document.getElementById('rulerHideBtn');
+    var toggleRow = document.getElementById('io-ruler');
+    var toggle = document.getElementById('rulerToggle');
+    var cal = document.getElementById('rulerCal');
+    var calStatus = document.getElementById('rulerCalStatus');
+    var diagInput = document.getElementById('rulerDiag');
+    var card = document.getElementById('rulerCard');
+    var slider = document.getElementById('rulerCardSlider');
+
+    var PREF_KEY = 'measure-toolkit-ruler';
+    var CAL_KEY = 'measure-toolkit-ruler-cal';
+    var CARD_MM = 85.6, CARD_H_MM = 53.98; // ISO/IEC 7810 ID-1 bank card
+    var ORIGIN_PX = 10;                     // blank space before the 0 mark
+
+    var prefs = { visible: true, unit: 'mm' };
+    var cals = {};
+    var info = null;
+    var cardBase = 96 / 25.4;
+
+    try {
+      var savedPrefs = JSON.parse(localStorage.getItem(PREF_KEY) || 'null');
+      if (savedPrefs) { prefs.visible = savedPrefs.visible !== false; prefs.unit = savedPrefs.unit === 'in' ? 'in' : 'mm'; }
+    } catch (e) {}
+    try {
+      var savedCals = JSON.parse(localStorage.getItem(CAL_KEY) || 'null');
+      if (savedCals && typeof savedCals === 'object') cals = savedCals;
+    } catch (e) {}
+    function savePrefs() { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch (e) {} }
+    function saveCals() { try { localStorage.setItem(CAL_KEY, JSON.stringify(cals)); } catch (e) {} }
+
+    function resolve() {
+      if (!info || !info.sizeDip || !info.sizeDip.width) return null;
+      var manual = cals[info.key];
+      var widthMm = 0, source = '';
+      if (manual && manual.widthMm > 0) { widthMm = manual.widthMm; source = manual.source; }
+      else if (info.autoWidthMm > 0) { widthMm = info.autoWidthMm; source = 'auto'; }
+      if (!widthMm) return null;
+      return { widthMm: widthMm, source: source, pxPerMm: info.sizeDip.width / widthMm };
+    }
+    function diagInches(widthMm) {
+      var w = info.sizeDip.width, h = info.sizeDip.height;
+      return widthMm * Math.hypot(w, h) / w / 25.4;
+    }
+    function cssVar(name, fallback) {
+      var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
+    }
+
+    function draw() {
+      if (wrap.hidden) return;
+      var dpr = window.devicePixelRatio || 1;
+      var rect = canvas.getBoundingClientRect();
+      var W = Math.round(rect.width), H = Math.round(rect.height);
+      if (W < 2 || H < 2) return;
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      var ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      var ink = cssVar('--ink', '#222'), soft = cssVar('--ink-soft', '#666'), accent = cssVar('--blue', '#c1592a');
+      ctx.font = (10 * dpr) + 'px ' + cssVar('--mono', 'monospace');
+      ctx.textBaseline = 'top';
+
+      var r = resolve();
+      if (!r || !(r.pxPerMm > 0.5)) {
+        ctx.fillStyle = soft;
+        var msg = r ? 'calibration looks wrong \u2014 click \u201Ccal\u201D'
+          : (info && info.autoPending ? 'detecting screen size\u2026' : 'ruler not calibrated \u2014 click \u201Ccal\u201D');
+        ctx.fillText(msg, ORIGIN_PX * dpr, 12 * dpr);
+        return;
+      }
+
+      var lineW = Math.max(1, Math.round(dpr));
+      function tick(xCss, lenCss, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(Math.round(xCss * dpr), 0, lineW, Math.round(lenCss * dpr));
+      }
+      var mm = prefs.unit === 'mm';
+      var stepMm = mm ? 1 : 25.4 / 16;
+      for (var i = 0; ; i++) {
+        var x = ORIGIN_PX + i * stepMm * r.pxPerMm;
+        if (x > W) break;
+        var len, major = false;
+        if (mm) {
+          if (i % 10 === 0) { len = 15; major = true; } else if (i % 5 === 0) len = 10; else len = 6;
+        } else {
+          if (i % 16 === 0) { len = 15; major = true; }
+          else if (i % 8 === 0) len = 12;
+          else if (i % 4 === 0) len = 9;
+          else if (i % 2 === 0) len = 6.5;
+          else len = 4.5;
+        }
+        tick(x, len, major ? ink : soft);
+        if (major) {
+          var n = mm ? i / 10 : i / 16;
+          ctx.fillStyle = soft;
+          ctx.fillText(n === 0 ? (mm ? '0 cm' : '0 in') : String(n), Math.round((x + 3) * dpr), Math.round(17 * dpr));
+        }
+      }
+      tick(ORIGIN_PX, 22, accent); // accent mark on the zero line
+    }
+
+    var REASONS = {
+      'disabled': 'Auto-detect is switched off.',
+      'no-monitor-info': 'Windows did not return monitor size info.',
+      'no-match': 'Could not match this screen to its monitor info.',
+      'ambiguous': 'Several monitors matched with different sizes.'
+    };
+    function sourceLabel(src) { return src === 'auto' ? 'auto' : src === 'card' ? 'card' : 'typed'; }
+
+    function updateStatus() {
+      var r = resolve();
+      if (r) statusEl.textContent = '~' + diagInches(r.widthMm).toFixed(1) + ' in \u00B7 ' + sourceLabel(r.source);
+      else statusEl.textContent = (info && info.autoPending) ? 'detecting\u2026' : 'uncalibrated';
+    }
+    function updateCalStatus() {
+      var lines = [];
+      var r = resolve();
+      if (r) {
+        lines.push('In use: ' + r.widthMm.toFixed(1) + ' mm wide screen (~' + diagInches(r.widthMm).toFixed(1) +
+          ' in diagonal), from ' + (r.source === 'auto' ? 'auto-detect' : r.source === 'card' ? 'your credit card match' : 'the size you typed') + '.');
+      } else {
+        lines.push('Not calibrated yet.');
+      }
+      if (info) {
+        if (info.autoPending) lines.push('Auto-detect: still looking\u2026');
+        else if (info.autoWidthMm) lines.push('Auto-detect found ' + info.autoWidthMm.toFixed(1) + ' mm (~' +
+          diagInches(info.autoWidthMm).toFixed(1) + ' in). Check that against your monitor\u2019s size.');
+        else lines.push('Auto-detect: ' + (REASONS[info.autoReason] || 'no result') + ' Use an option below.');
+      }
+      calStatus.textContent = lines.join('\n');
+    }
+    function refresh() {
+      updateStatus();
+      draw();
+      if (!cal.hidden) updateCalStatus();
+    }
+
+    function setCardSize() {
+      var w = CARD_MM * cardBase * (parseFloat(slider.value) / 100);
+      card.style.width = w.toFixed(1) + 'px';
+      card.style.height = (w * CARD_H_MM / CARD_MM).toFixed(1) + 'px';
+      card.textContent = '85.6 mm';
+    }
+    function openCal() {
+      var r = resolve();
+      cardBase = r ? r.pxPerMm : 96 / 25.4;
+      slider.value = 100;
+      setCardSize();
+      updateCalStatus();
+      cal.hidden = false;
+    }
+    function closeCal() { cal.hidden = true; }
+
+    function setManual(widthMm, source) {
+      if (!info || !(widthMm > 0)) return;
+      cals[info.key] = { widthMm: widthMm, source: source };
+      saveCals();
+      refresh();
+    }
+
+    document.getElementById('rulerDiagApply').addEventListener('click', function () {
+      var inches = parseFloat(String(diagInput.value).replace(',', '.'));
+      if (!info || !(inches >= 5 && inches <= 120)) {
+        calStatus.textContent = 'Enter the diagonal size in inches, between 5 and 120 (for example 27).';
+        return;
+      }
+      var w = info.sizeDip.width, h = info.sizeDip.height;
+      setManual(inches * 25.4 * w / Math.hypot(w, h), 'diagonal');
+    });
+    document.getElementById('rulerCardApply').addEventListener('click', function () {
+      var cardPx = parseFloat(card.style.width);
+      if (!info || !(cardPx > 20)) return;
+      setManual(info.sizeDip.width / (cardPx / CARD_MM), 'card');
+    });
+    slider.addEventListener('input', setCardSize);
+    document.getElementById('rulerAutoBtn').addEventListener('click', function () {
+      calStatus.textContent = 'Looking up monitor info\u2026';
+      bridge.rescan().then(function (i) {
+        if (i) info = i;
+        var found = !!(info && info.autoWidthMm);
+        if (found) { delete cals[info.key]; saveCals(); }
+        refresh();
+        updateCalStatus();
+        if (!found) calStatus.textContent += '\nKeeping your manual calibration (if you set one).';
+      }, function () { calStatus.textContent = 'Auto-detect could not run.'; });
+    });
+
+    function applyVisibility() {
+      wrap.hidden = !prefs.visible;
+      toggle.checked = prefs.visible;
+      document.body.classList.toggle('has-ruler', prefs.visible);
+      if (!prefs.visible) closeCal(); else requestAnimationFrame(draw);
+    }
+    function applyUnit() { unitBtn.textContent = prefs.unit; }
+
+    unitBtn.addEventListener('click', function () {
+      prefs.unit = prefs.unit === 'mm' ? 'in' : 'mm';
+      applyUnit(); savePrefs(); draw();
+    });
+    calBtn.addEventListener('click', function () { if (cal.hidden) openCal(); else closeCal(); });
+    hideBtn.addEventListener('click', function () { prefs.visible = false; savePrefs(); applyVisibility(); });
+    toggle.addEventListener('change', function () { prefs.visible = toggle.checked; savePrefs(); applyVisibility(); });
+    document.getElementById('rulerCalClose').addEventListener('click', closeCal);
+    document.getElementById('rulerCalDone').addEventListener('click', closeCal);
+    document.addEventListener('click', function (e) {
+      if (!cal.hidden && !cal.contains(e.target) && !calBtn.contains(e.target)) closeCal();
+    });
+
+    toggleRow.hidden = false;
+    applyUnit();
+    applyVisibility();
+
+    function setInfo(i) { if (!i) return; info = i; refresh(); }
+    bridge.getDisplayInfo().then(setInfo, function () {});
+    bridge.onDisplayChanged(setInfo);
+
+    window.addEventListener('resize', function () { requestAnimationFrame(draw); });
+    try {
+      new MutationObserver(function () { draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    } catch (e) {}
+    if (window.matchMedia) {
+      var darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      if (darkQuery.addEventListener) darkQuery.addEventListener('change', function () { draw(); });
+      // redraw when the window lands on a monitor with different scaling
+      (function watchDpr() {
+        var q = window.matchMedia('(resolution: ' + (window.devicePixelRatio || 1) + 'dppx)');
+        if (q.addEventListener) q.addEventListener('change', function () { draw(); watchDpr(); }, { once: true });
+      })();
+    }
+  })();
 
 })();
 </script>

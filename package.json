@@ -1,6 +1,6 @@
 {
   "name": "Measure",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Calculator, unit converter, and angle & radius toolkit",
   "main": "main.js",
   "private": true,
@@ -17,11 +17,14 @@
     "productName": "Measure",
     "files": [
       "main.js",
-      "index.html"
+      "preload.js",
+      "edid.js",
+      "index.html",
+      "icon.ico"
     ],
     "win": {
       "target": "portable",
-       "icon": "icon.ico"
+      "icon": "icon.ico"
     },
     "portable": {
       "artifactName": "Measure.exe"

@@ -1,43 +1,35 @@
-MEASURE — building a portable Windows .exe
-============================================
+MEASURE v1.1.0 - on-screen ruler (Windows app only)
+====================================================
 
-You need Node.js installed on the Windows PC you're building from
-(download from nodejs.org — the LTS version is fine).
+Put these 5 files in your project folder (the one with node_modules),
+replacing the old index.html, main.js and package.json:
 
-1. Unzip this folder anywhere, e.g. Desktop\measure-electron
+    index.html   main.js   preload.js   edid.js   package.json
 
-2. Open PowerShell (or Command Prompt) in that folder.
-   Easiest way: in File Explorer, open the measure-electron folder,
-   click the address bar, type "powershell", hit Enter.
+Keep icon.ico where it is. In GitHub Desktop, preload.js and edid.js show
+up as NEW files - commit them with the rest.
 
-3. Install dependencies:
-     npm install
+If you'd rather not replace package.json: the only change in it is that
+"files" must list the two new files, or the built .exe will fail to start:
 
-4. (Optional) Try it first without building:
-     npm start
-   This opens the app in a window right away, no build needed —
-   good for checking everything looks right first.
+    "files": ["main.js", "preload.js", "edid.js", "index.html", "icon.ico"]
 
-5. Build the portable .exe:
-     npm run dist
+Then:
+    npm start        (try it)
+    npm run dist     (build)
 
-6. When it finishes, look in the new "dist" folder for:
-     Measure-Portable.exe
+USING THE RULER
+- It sits along the bottom of the window. Bottom-right of the strip shows
+  what it believes your screen is, e.g.  ~27.0 in . auto
+  If that diagonal matches your monitor, you're calibrated.
+- Check it once by holding a real ruler against the screen.
+- If it's off or says "uncalibrated": click "cal", then either type your
+  screen's diagonal in inches, or hold a credit card to the screen and drag
+  the slider until the outline matches. Saved per monitor.
+- "mm" button switches between millimetres and inches.
+- Hide it with the x, or switch it back on from the Tools menu.
 
-   That single file is the whole app. Copy it anywhere — a USB
-   drive, a shared folder, Slack, email — and your colleagues can
-   just double-click it to run Measure. No installer, no admin
-   rights, nothing else to unzip.
-
-Notes:
-- The first "npm install" downloads Electron itself (~100+ MB),
-  so it needs a real internet connection and a couple of minutes.
-  After that, the app runs completely offline.
-- If Windows SmartScreen warns about an "unrecognized app" the
-  first time someone runs it, that's normal for an unsigned .exe —
-  click "More info" -> "Run anyway". Getting rid of that warning
-  requires a paid code-signing certificate, which is a separate
-  step if you ever want to skip it.
-- To change the app icon, drop a 256x256 icon.ico file in this
-  folder and add "icon": "icon.ico" under "win" in package.json,
-  then rebuild.
+If auto-detect gets blocked on a colleague's PC (some antivirus dislikes apps
+that run PowerShell), change this line at the top of main.js:
+    const AUTO_DETECT_MONITOR_SIZE = true;   ->   false
+The ruler then works from manual calibration only.
